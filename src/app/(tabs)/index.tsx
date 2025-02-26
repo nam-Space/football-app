@@ -1,9 +1,25 @@
+
+import { getVideos } from '@/utils/api';
+import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Platform, View, Text } from 'react-native';
 
 
 export default function HomeScreen() {
+  // const [videos, setVideos] = useState([])
+
+  // useEffect(() => {
+  //   const fetchRestaurants = async () => {
+  //     const res = await getVideos();
+  //     setVideos(res)
+  //   }
+  //   fetchRestaurants();
+  // }, []);
+
   return (
     <View>
+      {/* {videos?.map((video, index) => (
+        <Text key={index}>{video.title}</Text>
+      ))} */}
       <Text>Home</Text>
       <Text>Home</Text>
       <Text>Home</Text>
