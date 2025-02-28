@@ -61,11 +61,7 @@ const Register = () => {
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="white" />
-                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Register</Text>
-                <View style={styles.headerRight} />
             </View>
 
             <ScrollView style={styles.content}>
@@ -266,7 +262,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "center",
         backgroundColor: theme.colors.primary,
         height: 56,
         paddingHorizontal: 16,
