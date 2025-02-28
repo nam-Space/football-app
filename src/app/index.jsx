@@ -5,6 +5,7 @@ import React from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { getUserAccountAPI } from "@/utils/api";
 import { useApp } from "@/context/AppContext";
+import Toast from "react-native-toast-message";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
