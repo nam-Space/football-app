@@ -29,7 +29,8 @@ const RootPage = () => {
                     router.replace("/(tabs)");
                 } else {
                     //error
-                    router.replace("/(auth)/login");
+                    // router.replace("/(auth)/login");
+                    router.replace("/(tabs)/club");
                 }
             } catch (e) {
                 Toast.show({
