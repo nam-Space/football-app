@@ -28,9 +28,11 @@ function RootLayout() {
             <SafeAreaView style={{ flex: 1 }}>
                 <Stack
                     screenOptions={{
-                        headerShown: false,
+                        headerShown: false, // Ẩn header cho tất cả các màn hình
                     }}
                 >
+                    {/* Đặt màn hình Home làm trang mặc định */}
+                    <Stack.Screen name="home" options={{ title: "Home" }} />
                     <Stack.Screen name="+not-found" />
                 </Stack>
                 <StatusBar
