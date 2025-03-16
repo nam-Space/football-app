@@ -26,18 +26,51 @@ function RootLayout() {
     return (
         <GestureHandlerRootView>
             <SafeAreaView style={{ flex: 1 }}>
+                <StatusBar
+                    backgroundColor={theme.colors.statusBar}
+                    barStyle="light-content"
+                />
+                <Toast />
                 <Stack
                     screenOptions={{
                         headerShown: false,
                     }}
                 >
                     <Stack.Screen name="+not-found" />
+                    <Stack.Screen
+                        name="(main)/match"
+                        options={{
+                            headerShown: true,
+                            title: "Fixture",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
+                        }}
+                    />
+                    <Stack.Screen
+                        name="(main)/result"
+                        options={{
+                            headerShown: true,
+                            title: "Result",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
+                        }}
+                    />
+                    <Stack.Screen
+                        name="(main)/leagueTable"
+                        options={{
+                            headerShown: true,
+                            title: "Table",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
+                        }}
+                    />
                 </Stack>
-                <StatusBar
-                    backgroundColor={theme.colors.statusBar}
-                    barStyle="light-content"
-                />
-                <Toast />
             </SafeAreaView>
         </GestureHandlerRootView>
     );
