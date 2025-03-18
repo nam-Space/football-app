@@ -68,3 +68,13 @@ export const getStatisticOfTeamIdAPI = (teamId) => {
     const url = `/api/matches/statistics/${teamId}`;
     return axios.get(url);
 };
+
+export const getPlayerDetailAPI = (playerId) => {
+    const url = `/api/players/${playerId}`;
+    return axios.get(url);
+};
+
+export const getPlayerStatsAPI = (playerId) => {
+    const url = `/api/players/stats/${playerId}`;
+    return axios.get(url);
+};

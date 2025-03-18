@@ -70,7 +70,14 @@ function RootLayout() {
                             headerTintColor: "white",
                         }}
                     />
-                </Stack>
+                    <Stack.Screen
+                        name="(main)/player/[playerId]"
+                        options={{
+                        title: "Player Detail",
+                        headerShown: false,
+                        }}
+                    />
+                </Stack>         
             </SafeAreaView>
         </GestureHandlerRootView>
     );
