@@ -21,7 +21,7 @@ const RootPage = () => {
                 if (res.data) {
                     //success
                     setUser({
-                        user: res.data.user,
+                        ...res.data,
                         access_token: await AsyncStorage.getItem(
                             "access_token"
                         ),

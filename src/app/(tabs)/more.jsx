@@ -23,7 +23,7 @@
 //     },
 // });
 
-import React from "react";
+import React, { useState } from "react";
 import {
     View,
     Text,
@@ -40,9 +40,12 @@ import { theme } from "@/constants/theme";
 import { useApp } from "@/context/AppContext";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import TeamPickerModal from "@/components/TeamPickerModal";
 
 const MoreScreen = () => {
     const { user } = useApp();
+
+    const [modalVisible, setModalVisible] = useState(false);
 
     const handleLogout = () => {
         Alert.alert("Đăng xuất", "Bạn chắc chắn đăng xuất người dùng ?", [
@@ -122,15 +125,23 @@ const MoreScreen = () => {
                     <View style={styles.teamInfo}>
                         <Image
                             source={{
-                                uri: "https://resources.premierleague.com/premierleague/badges/t1.png",
+                                uri: user?.team?.crest,
                             }}
                             style={styles.teamLogo}
                         />
-                        <Text style={styles.teamName}>Man Utd</Text>
+                        <Text style={styles.teamName}>
+                            {user?.team?.shortName}
+                        </Text>
                     </View>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => setModalVisible(true)}>
                         <Text style={styles.editButton}>EDIT</Text>
                     </TouchableOpacity>
+                    {modalVisible && (
+                        <TeamPickerModal
+                            visible={modalVisible}
+                            onClose={() => setModalVisible(false)}
+                        />
+                    )}
                 </View>
 
                 {/* Club Links */}
