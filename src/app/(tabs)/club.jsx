@@ -4,6 +4,7 @@ import { Button } from "react-native-paper";
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
 import { Link } from "expo-router";
+require('dotenv').config();
 
 const TeamScreen = () => {
     const [activeTab, setActiveTab] = useState("overview"); // Thêm state quản lý tab
@@ -11,7 +12,7 @@ const TeamScreen = () => {
 
     const fetchTeam = async () => {
         try {
-            const response = await axios.get('https://api.football-data.org/v4/teams/2061', { headers: { "X-Auth-Token": "84f64d4adaf24a90a3b00a1ed06eaed4" } });
+            const response = await axios.get('https://api.football-data.org/v4/teams/2061', { headers: { "X-Auth-Token": process.env.API_KEY } });
             console.log(response.data);
             setTeam(response.data);
         } catch (error) {
