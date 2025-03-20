@@ -20,9 +20,14 @@ export const getUserAccountAPI = (data) => {
     return axios.get(url);
 };
 
+export const updateUser = (id, data) => {
+    const url = `/api/users/${id}`;
+    return axios.put(url, data);
+};
+
 export const updateUserFavouriteTeam = (data) => {
     const url = `/api/users/update-favourite`;
-    return axios.post(url, {
+    return axios.put(url, {
         ...data
     });
 }
