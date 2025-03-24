@@ -60,15 +60,6 @@ export const getTeamDetailAPI = (teamId) => {
     return axios.get(url);
 };
 
-export const getCompetitionStandingDetailAPI = (config) => {
-    const url = `/api/competitions/standings`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
 export const getStatisticOfTeamIdAPI = (teamId) => {
     const url = `/api/matches/statistics/${teamId}`;
     return axios.get(url);
@@ -82,4 +73,32 @@ export const getPlayerDetailAPI = (playerId) => {
 export const getPlayerStatsAPI = (playerId) => {
     const url = `/api/players/stats/${playerId}`;
     return axios.get(url);
+};
+
+// Lấy thông tin giải đấu
+export const getCompetitionDetailAPI = (competitionId = 2021) => {
+  const url = `/api/competitions?competitionId=${competitionId}`;
+  return axios.get(url);
+};
+
+// Lấy bảng xếp hạng
+export const getCompetitionStandingDetailAPI = (config) => {
+    const url = `/api/competitions/standings`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+// Lấy danh sách vua phá lưới
+export const getCompetitionScoreDetailAPI = (competitionId = 2021, params = {}) => {
+  const url = `/api/competitions/scorers?competitionId=${competitionId}`;
+  return axios.get(url, { params });
+};
+
+// Lấy danh sách trận đấu của đội bóng
+export const getTeamMatchesAPI = (teamId, params = {}) => {
+  const url = `/api/teams/matches/${teamId}`;
+  return axios.get(url, { params });
 };
