@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getMatchesAPI } from "@/utils/api";
+import { router } from "expo-router";
 
 const competitions = [
     { id: "PL", name: "Premier League" },
@@ -26,6 +27,38 @@ const competitions = [
     { id: "EL", name: "UEFA Europa League" },
     { id: "ECL", name: "UEFA Conference League" },
 ];
+
+function convertDateFormat(dateString) {
+    // Danh sách tháng để chuyển đổi từ tên sang số
+    const months = {
+        Jan: "01",
+        Feb: "02",
+        Mar: "03",
+        Apr: "04",
+        May: "05",
+        Jun: "06",
+        Jul: "07",
+        Aug: "08",
+        Sep: "09",
+        Oct: "10",
+        Nov: "11",
+        Dec: "12",
+    };
+
+    // Regex để tách thông tin từ chuỗi
+    const regex = /(\w+), (\d{2}) (\w{3}) (\d{4})/;
+    const match = dateString.match(regex);
+
+    if (match) {
+        const day = match[2];
+        const month = months[match[3]];
+        const year = match[4];
+
+        return `${year}-${month}-${day}`;
+    }
+
+    return null; // Trả về null nếu chuỗi không đúng định dạng
+}
 
 const clubs = [{ id: "ALL", name: "All Clubs" }];
 
@@ -276,6 +309,16 @@ const Result = () => {
                             <TouchableOpacity
                                 key={match.id}
                                 style={styles.matchCard}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/(main)/battleDetail",
+                                        params: {
+                                            homeTeamId: match.homeTeam.id,
+                                            awayTeamId: match.awayTeam.id,
+                                            matchDate: convertDateFormat(date),
+                                        },
+                                    })
+                                }
                             >
                                 <View style={styles.matchInfo}>
                                     <View style={styles.team}>
