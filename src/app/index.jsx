@@ -27,6 +27,7 @@ const RootPage = () => {
                         ),
                     });
                     router.replace("/(tabs)");
+                    // router.replace("/(main)/match");
                 } else {
                     //error
                     // router.replace("/(auth)/login");
