@@ -1,10 +1,52 @@
 import axios from "@/utils/axios.customize";
 
+/* Video */
 export const getVideosAPI = () => {
     const url = `/api/videos`;
     return axios.get(url);
 };
 
+export const getRelatedVideosAPI = (keyword) => {
+    const url = `/api/videos/related-videos/${keyword}`;
+    return axios.get(url);
+};
+
+export const getRelatedVideosBattleAPI = (config) => {
+    const url = `/api/videos/related-videos-battle`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+
+/* News */
+export const getRelatedNewsAPI = (keyword) => {
+    const url = `/api/news/related-news/${keyword}`;
+    return axios.get(url);
+};
+
+export const getNewsDetailAPI = (config) => {
+    const url = `/api/news/news-detail`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getRelatedNewsBattleAPI = (config) => {
+    const url = `/api/news/related-news-battle`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+
+/* User */
 export const loginUserAPI = (data) => {
     const url = `/api/users/login`;
     return axios.post(url, { ...data });
@@ -32,6 +74,13 @@ export const updateUserFavouriteTeam = (data) => {
     });
 }
 
+export const getPlayerImageAPI = (playerName) => {
+    const url = `/api/players/player-image-url/${playerName}`;
+    return axios.get(url);
+}
+
+/* Match */
+
 export const getMatchesAPI = (slug) => {
     const url = `/api/matches`;
     return axios.get(url, {
@@ -50,18 +99,8 @@ export const getMatchesOfTeamIdAPI = (teamId, config) => {
     });
 };
 
-export const getAllTeamAPI = () => {
-    const url = `/api/teams`;
-    return axios.get(url);
-};
-
-export const getTeamDetailAPI = (teamId) => {
-    const url = `/api/teams/${teamId}`;
-    return axios.get(url);
-};
-
-export const getCompetitionStandingDetailAPI = (config) => {
-    const url = `/api/competitions/standings`;
+export const getCompetitionMatchesAPI = (config) => {
+    const url = `/api/competitions/competition-matches`;
     return axios.get(url, {
         params: {
             ...config
@@ -74,12 +113,135 @@ export const getStatisticOfTeamIdAPI = (teamId) => {
     return axios.get(url);
 };
 
-export const getPlayerDetailAPI = (playerId) => {
-    const url = `/api/players/${playerId}`;
+/* Battle */
+export const getBattleByTeamIdAPI = (config) => {
+    const url = `/api/battles`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getBattleByIdAPI = (id) => {
+    const url = `/api/battles/battle-detail/${id}`;
     return axios.get(url);
 };
 
-export const getPlayerStatsAPI = (playerId) => {
-    const url = `/api/players/stats/${playerId}`;
+export const getBattleStatisticByIdAPI = (id) => {
+    const url = `/api/battles/stats/${id}`;
     return axios.get(url);
 };
+
+export const getBattleStatisticByTeamIdAPI = (config) => {
+    const url = `/api/battles/battle-stats`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getBattleReportByIdAPI = (id) => {
+    const url = `/api/battles/report/${id}`;
+    return axios.get(url);
+};
+
+export const getBattleReportByTeamIdAPI = (config) => {
+    const url = `/api/battles/battle-report`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getBattleCommentaryByBattleIdAPI = (id) => {
+    const url = `/api/battles/commentary/${id}`;
+    return axios.get(url);
+};
+
+export const getBattleCommentaryByTeamIdAPI = (config) => {
+    const url = `/api/battles/battle-commentary`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getBattleHighlightByTeamIdAPI = (config) => {
+    const url = `/api/battles/battle-highlights`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getBattleHeadToHeadByTeamIdAPI = (config) => {
+    const url = `/api/battles/head-to-head`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getBattleLineupByIdAPI = (id) => {
+    const url = `/api/battles/lineup/${id}`;
+    return axios.get(url);
+};
+
+/* Team */
+export const getAllTeamAPI = () => {
+    const url = `/api/teams`;
+    return axios.get(url);
+};
+
+export const getTeamDetailAPI = (teamId) => {
+    const url = `/api/teams/${teamId}`;
+    return axios.get(url);
+};
+
+export const getTeamMatchesAPI = (teamId, config) => {
+    const url = `/api/teams/team-matches/${teamId}`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+/* Competitions */
+
+export const getCompetitionStandingDetailAPI = (config) => {
+    const url = `/api/competitions/standings`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+/* Comment */
+export const getAllCommentsByArticleIdAPI = (articleId) => {
+    const url = `/api/comments/${articleId}`;
+    return axios.get(url);
+}
+
+export const createCommentAPI = (articleId, data) => {
+    const url = `/api/comments/create/${articleId}`;
+    return axios.post(url, { ...data });
+}
+
+
+export const updateCommentAPI = (commentId, data) => {
+    const url = `/api/comments/update/${commentId}`;
+    return axios.put(url, { ...data });
+}
+
+export const deleteCommentAPI = (id) => {
+    const url = `/api/comments/delete/${id}`;
+    return axios.delete(url);
+}

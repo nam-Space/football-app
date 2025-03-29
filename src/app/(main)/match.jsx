@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getMatchesAPI } from "@/utils/api";
+import { router } from "expo-router";
 
 const competitions = [
     { id: "PL", name: "Premier League" },
@@ -147,6 +148,38 @@ const Match = () => {
         }
     };
 
+    function convertDateFormat(dateString) {
+        // Danh sách tháng để chuyển đổi từ tên sang số
+        const months = {
+            Jan: "01",
+            Feb: "02",
+            Mar: "03",
+            Apr: "04",
+            May: "05",
+            Jun: "06",
+            Jul: "07",
+            Aug: "08",
+            Sep: "09",
+            Oct: "10",
+            Nov: "11",
+            Dec: "12",
+        };
+
+        // Regex để tách thông tin từ chuỗi
+        const regex = /(\w+), (\d{2}) (\w{3}) (\d{4})/;
+        const match = dateString.match(regex);
+
+        if (match) {
+            const day = match[2];
+            const month = months[match[3]];
+            const year = match[4];
+
+            return `${year}-${month}-${day}`;
+        }
+
+        return null; // Trả về null nếu chuỗi không đúng định dạng
+    }
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -170,7 +203,7 @@ const Match = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {/* Header */}
             {/* <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -276,6 +309,16 @@ const Match = () => {
                             <TouchableOpacity
                                 key={match.id}
                                 style={styles.matchCard}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/(main)/matchDetail",
+                                        params: {
+                                            homeTeamId: match.homeTeam.id,
+                                            awayTeamId: match.awayTeam.id,
+                                            matchDate: convertDateFormat(date),
+                                        },
+                                    })
+                                }
                             >
                                 <View style={styles.matchInfo}>
                                     <View style={styles.team}>
@@ -318,7 +361,7 @@ const Match = () => {
                     </View>
                 ))}
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

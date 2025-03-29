@@ -8,6 +8,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+// import { LogBox } from "react-native";
+// LogBox.ignoreAllLogs();
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -71,13 +73,39 @@ function RootLayout() {
                         }}
                     />
                     <Stack.Screen
-                        name="(main)/player/[playerId]"
+                        name="(main)/matchDetail"
                         options={{
-                        title: "Player Detail",
-                        headerShown: false,
+                            headerShown: true,
+                            title: "Match Detail",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
                         }}
                     />
-                </Stack>         
+                    <Stack.Screen
+                        name="(main)/newsDetail"
+                        options={{
+                            headerShown: true,
+                            title: "News Detail",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
+                        }}
+                    />
+                    <Stack.Screen
+                        name="(main)/battleDetail"
+                        options={{
+                            headerShown: true,
+                            title: "Battle Detail",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
+                        }}
+                    />
+                </Stack>
             </SafeAreaView>
         </GestureHandlerRootView>
     );
