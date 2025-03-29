@@ -3,7 +3,8 @@ export const theme = {
         primary: '#2F0233',
         statusBar: '#220027',
         orange: "#f4511e",
-        gray: '#d0d0d0'
+        gray: '#d0d0d0',
+        dark: '#3E3E3E',
     },
     fonts: {
         medium: '500',
