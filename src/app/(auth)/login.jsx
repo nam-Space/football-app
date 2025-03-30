@@ -26,8 +26,11 @@ const Login = () => {
     const handleLogin = async () => {
         const res = await loginUserAPI({ ...form });
         if (res.data) {
-            await AsyncStorage.setItem("access_token", res.data.token);
-            setUser(res.data);
+            const { token, ...userData } = res.data; // Tách token và userData
+        
+            await AsyncStorage.setItem("access_token", token);
+            await AsyncStorage.setItem("user", JSON.stringify(userData)); // Lưu user vào AsyncStorage
+            setUser(userData); // Cập nhật context
             router.replace("/(tabs)");
         } else {
             Toast.show({

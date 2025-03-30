@@ -4,22 +4,67 @@ import { Button } from "react-native-paper";
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
 import { Link } from "expo-router";
-require('dotenv').config();
+// require('dotenv').config();
 
 const TeamScreen = () => {
     const [activeTab, setActiveTab] = useState("overview"); // Thêm state quản lý tab
     const [team, setTeam] = useState(null);
+    const [teamStats, setTeamStats] = useState(null);
+    const [teamName, setTeamName] = useState("");
+    const [teamColors, setTeamColors] = useState("");
+    const [squad, setSquad] = useState([]);
 
     const fetchTeam = async () => {
         try {
-            const response = await axios.get('https://api.football-data.org/v4/teams/2061', { headers: { "X-Auth-Token": process.env.API_KEY } });
+            const response = await axios.get('https://api.football-data.org/v4/teams/64', { headers: { "X-Auth-Token": "84f64d4adaf24a90a3b00a1ed06eaed4" } });
             console.log(response.data);
             setTeam(response.data);
+            setTeamName(response.data.name);
+            const colors = response.data.clubColors.split(" / "); // ["Red", "White"]
+            setTeamColors(colors[0]); // Lấy màu đầu tiên
+            setSquad(response.data.squad);
+            console.log("Màu sắc đội bóng:", colors[0]);
         } catch (error) {
             console.error("Lỗi gọi API:", error);
         }
     };
+    // Hàm chọn ngẫu nhiên 3 cầu thủ
+    const getRandomPlayers = () => {
+        if (squad.length < 3) return [];
+        const shuffled = squad.sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, 3);
+    };
 
+    // Hàm tạo thông số ngẫu nhiên
+    const getRandomStat = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
+
+    // Danh sách các hạng mục
+    const categories = [
+        { title: "Bàn thắng", min: 5, max: 20 },
+        { title: "Kiến tạo", min: 3, max: 15 },
+        { title: "Đường chuyền", min: 30, max: 100 },
+        { title: "Sút bóng", min: 10, max: 50 },
+        { title: "Cướp bóng", min: 5, max: 30 },
+        { title: "Thắng không chiến", min: 2, max: 15 },
+        { title: "Phá bóng", min: 5, max: 25 },
+        { title: "Cắt bóng", min: 3, max: 20 },
+    ];
+    const fetchTeamStats = async () => {
+        try {
+            const response = await axios.get('https://api.football-data-api.com/league-teams?key=test85g57&season_id=2012&include=stats');
+            if (response.data.success) {
+                const clubData = response.data.data.find((team) => team.name.toLowerCase() === teamName.toLowerCase());
+                if (clubData) {
+                  setTeamStats(clubData);
+                  console.log("Dữ liệu thống kê đội bóng:", clubData);
+                } else {
+                  setError("Không tìm thấy câu lạc bộ");
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi gọi API:", error);
+        }
+    };
     useEffect(() => {
         fetchTeam();
     }, []);
@@ -27,6 +72,10 @@ const TeamScreen = () => {
         console.log("Dữ liệu team:", team);
         // console.log("Dữ liệu team:", team.shortName);
     }, [team]);
+
+    useEffect(() => {
+        fetchTeamStats();
+    }, [teamName]);
     if (!team) {
         return <Text>Đang tải dữ liệu...</Text>;
     }
@@ -189,19 +238,20 @@ const PositionSection = ({ title, players }) => {
                             <Text style={styles.statsSectionTitle}>Tấn công</Text>
                             <View style={styles.statsGrid}>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>68</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.seasonGoals_overall}</Text>
                                     <Text style={styles.statsLabel}>Bàn thắng</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>2.5</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.scoredAVGHT_overall}</Text>
                                     <Text style={styles.statsLabel}>Bàn/Trận</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>425</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.shotsOnTargetTotal_overall}</Text>
                                     <Text style={styles.statsLabel}>Sút</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>38%</Text>
+                                    <Text style={styles.statsValue}>{Math.round(teamStats.stats.shotsOnTargetTotal_overall / teamStats.stats.shotsTotal_overall * 100)}%
+                                    </Text>
                                     <Text style={styles.statsLabel}>Tỷ lệ sút trúng đích</Text>
                                 </View>
                             </View>
@@ -212,20 +262,20 @@ const PositionSection = ({ title, players }) => {
                             <Text style={styles.statsSectionTitle}>Lối chơi</Text>
                             <View style={styles.statsGrid}>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>65%</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.possessionAVG_overall}%</Text>
                                     <Text style={styles.statsLabel}>Kiểm soát bóng</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>12,458</Text>
-                                    <Text style={styles.statsLabel}>Số đường chuyền</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.additional_info.penalties_scored_overall}</Text>
+                                    <Text style={styles.statsLabel}>Ghi bàn từ penalty</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>89%</Text>
-                                    <Text style={styles.statsLabel}>Tỷ lệ chuyền chính xác</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.additional_info.throwins_team_num_overall}</Text>
+                                    <Text style={styles.statsLabel}>Số đường ném biên</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>285</Text>
-                                    <Text style={styles.statsLabel}>Số đường kiến tạo</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.cornersTotal_overall}</Text>
+                                    <Text style={styles.statsLabel}>Tổng số phạt góc</Text>
                                 </View>
                             </View>
                         </View>
@@ -234,22 +284,23 @@ const PositionSection = ({ title, players }) => {
                         <View style={styles.statsSection}>
                             <Text style={styles.statsSectionTitle}>Phòng thủ</Text>
                             <View style={styles.statsGrid}>
-                                <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>15</Text>
-                                    <Text style={styles.statsLabel}>Clean sheets</Text>
-                                </View>
-                                <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>245</Text>
-                                    <Text style={styles.statsLabel}>Tackle thành công</Text>
-                                </View>
-                                <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>156</Text>
-                                    <Text style={styles.statsLabel}>Cản phá</Text>
-                                </View>
-                                <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>28</Text>
+                            <View style={styles.statsItem}>
+                                    <Text style={styles.statsValue}>{teamStats.stats.seasonConcededNum_overall}</Text>
                                     <Text style={styles.statsLabel}>Bàn thua</Text>
                                 </View>
+                                <View style={styles.statsItem}>
+                                    <Text style={styles.statsValue}>{teamStats.stats.additional_info.penalties_conceded_overall}</Text>
+                                    <Text style={styles.statsLabel}>Bàn thua từ penalty</Text>
+                                </View>
+                                <View style={styles.statsItem}>
+                                    <Text style={styles.statsValue}>{teamStats.stats.seasonCSPercentage_overall}%</Text>
+                                    <Text style={styles.statsLabel}>Tỷ lệ giữ sạch lưới</Text>
+                                </View>
+                                <View style={styles.statsItem}>
+                                    <Text style={styles.statsValue}>{teamStats.stats.seasonConcededMin_overall}</Text>
+                                    <Text style={styles.statsLabel}>Số phút trung bình để thủng lưới</Text>
+                                </View>
+                                
                             </View>
                         </View>
 
@@ -258,26 +309,26 @@ const PositionSection = ({ title, players }) => {
                             <Text style={styles.statsSectionTitle}>Khác</Text>
                             <View style={styles.statsGrid}>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>35</Text>
-                                    <Text style={styles.statsLabel}>Thẻ vàng</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.cardsTotal_overall}</Text>
+                                    <Text style={styles.statsLabel}>Tổng số thẻ</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>3</Text>
-                                    <Text style={styles.statsLabel}>Thẻ đỏ</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.cornersAVG_overall}</Text>
+                                    <Text style={styles.statsLabel}>Phạt góc trung bình</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>268</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.foulsTotal_overall}</Text>
                                     <Text style={styles.statsLabel}>Phạm lỗi</Text>
                                 </View>
                                 <View style={styles.statsItem}>
-                                    <Text style={styles.statsValue}>285</Text>
-                                    <Text style={styles.statsLabel}>Bị phạm lỗi</Text>
+                                    <Text style={styles.statsValue}>{teamStats.stats.offsidesTotal_overall}</Text>
+                                    <Text style={styles.statsLabel}>Việt vị</Text>
                                 </View>
                             </View>
                         </View>
                     </View>
                 );
-            case "playerStats":
+            case "playerStats1":
                 return (
                     <View style={{ padding: 20 }}>
                         {/* Nút chọn mùa giải */}
@@ -447,6 +498,44 @@ const PositionSection = ({ title, players }) => {
                         </View>
                     </View>
                 );
+            case "playerStats":
+                return (
+                <ScrollView style={{ padding: 20 }}>
+            {/* Nút chọn mùa giải */}
+            <View style={{ marginBottom: 20 }}>
+                <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", padding: 10, backgroundColor: "#ddd", borderRadius: 5 }}>
+                    <Text style={{ fontSize: 16, marginRight: 5 }}>Mùa 2023/24</Text>
+                    <AntDesign name="caretdown" size={12} color="#333" />
+                </TouchableOpacity>
+            </View>
+
+            {categories.map((category, index) => {
+                const players = getRandomPlayers();
+                return (
+                    <View key={index} style={{ marginBottom: 20 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <Text style={{ fontSize: 18, fontWeight: "bold" }}>{category.title}</Text>
+                            <TouchableOpacity>
+                                <Text style={{ color: "#4A235A" }}>Xem tất cả</Text>
+                                <AntDesign name="right" size={14} color="#4A235A" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {players.map((player) => (
+                            <View key={player.id} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+                                <Image source={{ uri: "https://via.placeholder.com/40" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16 }}>{player.name}</Text>
+                                    <Text style={{ color: "#666" }}>{player.position}</Text>
+                                </View>
+                                <Text style={{ fontSize: 16, fontWeight: "bold" }}>{getRandomStat(category.min, category.max)}</Text>
+                            </View>
+                        ))}
+                    </View>
+                );
+            })}
+        </ScrollView>
+                )
             default:
                 return null;
         }
@@ -460,7 +549,7 @@ const PositionSection = ({ title, players }) => {
             <View style={{ position: "relative" }}>
                 <Image
                     source={{ uri: "https://via.placeholder.com/500" }}
-                    style={{ width: "100%", height: 200 }}
+                    style={{ width: "100%", height: 200, backgroundColor: teamColors.toLowerCase() }}
                 />
                 <TouchableOpacity
                     style={{
