@@ -13,6 +13,8 @@ const TeamScreen = () => {
     const [teamName, setTeamName] = useState("");
     const [teamColors, setTeamColors] = useState("");
     const [squad, setSquad] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+
 
     const fetchTeam = async () => {
         try {
@@ -34,7 +36,11 @@ const TeamScreen = () => {
         const shuffled = squad.sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 3);
     };
-
+    const get10RandomPlayers = () => {
+        if (squad.length < 3) return [];
+        const shuffled = squad.sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, 10);
+    };
     // Hàm tạo thông số ngẫu nhiên
     const getRandomStat = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
 
@@ -84,7 +90,7 @@ const TeamScreen = () => {
         if (!team) return <Text>Đang tải dữ liệu...</Text>;
         // Hàm lọc cầu thủ theo vị trí
     const filterPlayersByPosition = (position) => {
-        return team.squad.filter(player => player.position === position);
+        return team.squad.filter(player => player.position && player.position.toLowerCase().includes(position.toLowerCase()));
     };
     // ✅ Component hiển thị danh sách cầu thủ theo từng vị trí
     const getPlayerImage = async (playerName) => {
@@ -103,7 +109,7 @@ const TeamScreen = () => {
         }
     };
     
-const PositionSection = ({ title, players }) => {
+    const PositionSection = ({ title, players }) => {
     const [playerImages, setPlayerImages] = useState({});
 
     useEffect(() => {
@@ -137,7 +143,51 @@ const PositionSection = ({ title, players }) => {
         </View>
     </View>)
 };    
+if (selectedCategory) {
+    const players = get10RandomPlayers(); // Chỉ lấy 10 cầu thủ
 
+    return (
+        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+            <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+                {/* Tiêu đề và nút quay lại */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{selectedCategory.title} - Bảng xếp hạng</Text>
+                    <TouchableOpacity onPress={() => setSelectedCategory(null)}>
+                        <Text style={{ color: "red", fontSize: 16 }}>← Quay lại</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Danh sách cầu thủ */}
+                {players.map((player, index) => (
+                    <View
+                        key={player.id}
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: 15,
+                            padding: 10,
+                            backgroundColor: index < 3 ? "#f9f2ff" : "#f8f9fa",
+                            borderRadius: 8,
+                        }}
+                    >
+                        <Text style={{ width: 30, fontSize: 16, fontWeight: 'bold', textAlign: "center" }}>{index + 1}</Text>
+                        <Image
+                            source={{ uri: "https://via.placeholder.com/40" }}
+                            style={{ width: 40, height: 40, borderRadius: 20, marginHorizontal: 10 }}
+                        />
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 16, fontWeight: '600' }}>{player.name}</Text>
+                            <Text style={{ color: "#777", fontSize: 14 }}>{player.position}</Text>
+                        </View>
+                        <Text style={{ fontSize: 16, fontWeight: "bold", color: "#4A235A" }}>
+                            {getRandomStat(selectedCategory.min, selectedCategory.max)}
+                        </Text>
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+    );
+}
         
         switch (activeTab) {
             case "overview":
@@ -214,9 +264,9 @@ const PositionSection = ({ title, players }) => {
                 {/* Thủ môn */}
                 <PositionSection title="Thủ môn" players={filterPlayersByPosition("Goalkeeper")} />
                 {/* Hậu vệ */}
-                <PositionSection title="Hậu vệ" players={filterPlayersByPosition("Defence")} />
+                <PositionSection title="Hậu vệ" players={filterPlayersByPosition("Back")} />
                 {/* Tiền vệ */}
-                <PositionSection title="Tiền vệ" players={filterPlayersByPosition("Midfield")} />
+                <PositionSection title="Tiền vệ" players={filterPlayersByPosition("Centre")} />
                 {/* Tiền đạo */}
                 <PositionSection title="Tiền đạo" players={filterPlayersByPosition("Offence")} />
             </ScrollView>
@@ -499,6 +549,8 @@ const PositionSection = ({ title, players }) => {
                     </View>
                 );
             case "playerStats":
+                
+                                
                 return (
                 <ScrollView style={{ padding: 20 }}>
             {/* Nút chọn mùa giải */}
@@ -515,7 +567,7 @@ const PositionSection = ({ title, players }) => {
                     <View key={index} style={{ marginBottom: 20 }}>
                         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                             <Text style={{ fontSize: 18, fontWeight: "bold" }}>{category.title}</Text>
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={() => setSelectedCategory(category)}>
                                 <Text style={{ color: "#4A235A" }}>Xem tất cả</Text>
                                 <AntDesign name="right" size={14} color="#4A235A" />
                             </TouchableOpacity>
@@ -525,6 +577,7 @@ const PositionSection = ({ title, players }) => {
                             <View key={player.id} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                                 <Image source={{ uri: "https://via.placeholder.com/40" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
                                 <View style={{ flex: 1 }}>
+                                
                                     <Text style={{ fontSize: 16 }}>{player.name}</Text>
                                     <Text style={{ color: "#666" }}>{player.position}</Text>
                                 </View>
