@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView,Linking } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, Linking } from "react-native";
 import { Button } from "react-native-paper";
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
@@ -46,14 +46,14 @@ const TeamScreen = () => {
 
     // Danh sách các hạng mục
     const categories = [
-        { title: "Bàn thắng", min: 5, max: 20 },
-        { title: "Kiến tạo", min: 3, max: 15 },
-        { title: "Đường chuyền", min: 30, max: 100 },
-        { title: "Sút bóng", min: 10, max: 50 },
-        { title: "Cướp bóng", min: 5, max: 30 },
-        { title: "Thắng không chiến", min: 2, max: 15 },
-        { title: "Phá bóng", min: 5, max: 25 },
-        { title: "Cắt bóng", min: 3, max: 20 },
+        { title: "Goals", min: 5, max: 20 },
+        { title: "Assists", min: 3, max: 15 },
+        { title: "Passes", min: 30, max: 100 },
+        { title: "Shots", min: 10, max: 50 },
+        { title: "Tackles", min: 5, max: 30 },
+        { title: "Aerial Duels Won", min: 2, max: 15 },
+        { title: "Clearances", min: 5, max: 25 },
+        { title: "Interceptions", min: 3, max: 20 },
     ];
     const fetchTeamStats = async () => {
         try {
@@ -61,10 +61,10 @@ const TeamScreen = () => {
             if (response.data.success) {
                 const clubData = response.data.data.find((team) => team.name.toLowerCase() === teamName.toLowerCase());
                 if (clubData) {
-                  setTeamStats(clubData);
-                  console.log("Dữ liệu thống kê đội bóng:", clubData);
+                    setTeamStats(clubData);
+                    console.log("Dữ liệu thống kê đội bóng:", clubData);
                 } else {
-                  setError("Không tìm thấy câu lạc bộ");
+                    setError("Không tìm thấy câu lạc bộ");
                 }
             }
         } catch (error) {
@@ -89,127 +89,127 @@ const TeamScreen = () => {
     const renderTabContent = () => {
         if (!team) return <Text>Đang tải dữ liệu...</Text>;
         // Hàm lọc cầu thủ theo vị trí
-    const filterPlayersByPosition = (position) => {
-        return team.squad.filter(player => player.position && player.position.toLowerCase().includes(position.toLowerCase()));
-    };
-    // ✅ Component hiển thị danh sách cầu thủ theo từng vị trí
-    const getPlayerImage = async (playerName) => {
-        try {
-            const response = await axios.get(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(playerName)}`);
-            const playerData = response.data.player;
-    
-            if (playerData && playerData.length > 0 && playerData[0].strCutout) {
-                return playerData[0].strCutout;  // Ảnh cầu thủ
-            } else {
-                return 'https://via.placeholder.com/80';  // Ảnh mặc định nếu không có dữ liệu
-            }
-        } catch (error) {
-            console.error("Lỗi tải ảnh cầu thủ:", error);
-            return 'https://via.placeholder.com/80'; // Ảnh mặc định khi lỗi
-        }
-    };
-    
-    const PositionSection = ({ title, players }) => {
-    const [playerImages, setPlayerImages] = useState({});
+        const filterPlayersByPosition = (position) => {
+            return team.squad.filter(player => player.position && player.position.toLowerCase().includes(position.toLowerCase()));
+        };
+        // ✅ Component hiển thị danh sách cầu thủ theo từng vị trí
+        const getPlayerImage = async (playerName) => {
+            try {
+                const response = await axios.get(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(playerName)}`);
+                const playerData = response.data.player;
 
-    useEffect(() => {
-        const fetchImages = async () => {
-            const images = {};
-            for (const player of players) {
-                images[player.id] = await getPlayerImage(player.name);
+                if (playerData && playerData.length > 0 && playerData[0].strCutout) {
+                    return playerData[0].strCutout;  // Ảnh cầu thủ
+                } else {
+                    return 'https://via.placeholder.com/80';  // Ảnh mặc định nếu không có dữ liệu
+                }
+            } catch (error) {
+                console.error("Lỗi tải ảnh cầu thủ:", error);
+                return 'https://via.placeholder.com/80'; // Ảnh mặc định khi lỗi
             }
-            setPlayerImages(images);
         };
 
-        fetchImages();
-    }, [players]);
-    return (
-    <View style={styles.positionSection}>
-        <Text style={styles.positionTitle}>{title}</Text>
-        <View style={styles.playersList}>
-            {players.map(player => (
-                <TouchableOpacity key={player.id} style={styles.playerCard}>
-                    <Image
-                            source={{ uri: playerImages[player.id] || 'https://via.placeholder.com/80' }}
-                            style={styles.playerImage}
-                        />
-                    <View style={styles.playerInfo}>
-                        <Text style={styles.playerNumber}>{player.shirtNumber}</Text>
-                        <Text style={styles.playerName}>{player.name}</Text>
-                        <Text style={styles.playerDetails}>{player.nationality}</Text>
+        const PositionSection = ({ title, players }) => {
+            const [playerImages, setPlayerImages] = useState({});
+
+            useEffect(() => {
+                const fetchImages = async () => {
+                    const images = {};
+                    for (const player of players) {
+                        images[player.id] = await getPlayerImage(player.name);
+                    }
+                    setPlayerImages(images);
+                };
+
+                fetchImages();
+            }, [players]);
+            return (
+                <View style={styles.positionSection}>
+                    <Text style={styles.positionTitle}>{title}</Text>
+                    <View style={styles.playersList}>
+                        {players.map(player => (
+                            <TouchableOpacity key={player.id} style={styles.playerCard}>
+                                <Image
+                                    source={{ uri: playerImages[player.id] || 'https://via.placeholder.com/80' }}
+                                    style={styles.playerImage}
+                                />
+                                <View style={styles.playerInfo}>
+                                    <Text style={styles.playerNumber}>{player.shirtNumber}</Text>
+                                    <Text style={styles.playerName}>{player.name}</Text>
+                                    <Text style={styles.playerDetails}>{player.nationality}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                </TouchableOpacity>
-            ))}
-        </View>
-    </View>)
-};    
-if (selectedCategory) {
-    const players = get10RandomPlayers(); // Chỉ lấy 10 cầu thủ
+                </View>)
+        };
+        if (selectedCategory) {
+            const players = get10RandomPlayers(); // Chỉ lấy 10 cầu thủ
 
-    return (
-        <View style={{ flex: 1, backgroundColor: "#fff" }}>
-            <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-                {/* Tiêu đề và nút quay lại */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                    <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{selectedCategory.title} - Bảng xếp hạng</Text>
-                    <TouchableOpacity onPress={() => setSelectedCategory(null)}>
-                        <Text style={{ color: "red", fontSize: 16 }}>← Quay lại</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Danh sách cầu thủ */}
-                {players.map((player, index) => (
-                    <View
-                        key={player.id}
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginBottom: 15,
-                            padding: 10,
-                            backgroundColor: index < 3 ? "#f9f2ff" : "#f8f9fa",
-                            borderRadius: 8,
-                        }}
-                    >
-                        <Text style={{ width: 30, fontSize: 16, fontWeight: 'bold', textAlign: "center" }}>{index + 1}</Text>
-                        <Image
-                            source={{ uri: "https://via.placeholder.com/40" }}
-                            style={{ width: 40, height: 40, borderRadius: 20, marginHorizontal: 10 }}
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 16, fontWeight: '600' }}>{player.name}</Text>
-                            <Text style={{ color: "#777", fontSize: 14 }}>{player.position}</Text>
+            return (
+                <View style={{ flex: 1, backgroundColor: "#fff" }}>
+                    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+                        {/* Tiêu đề và nút quay lại */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{selectedCategory.title} - Ranking</Text>
+                            <TouchableOpacity onPress={() => setSelectedCategory(null)}>
+                                <Text style={{ color: "red", fontSize: 16 }}>← Back</Text>
+                            </TouchableOpacity>
                         </View>
-                        <Text style={{ fontSize: 16, fontWeight: "bold", color: "#4A235A" }}>
-                            {getRandomStat(selectedCategory.min, selectedCategory.max)}
-                        </Text>
-                    </View>
-                ))}
-            </ScrollView>
-        </View>
-    );
-}
-        
+
+                        {/* Danh sách cầu thủ */}
+                        {players.map((player, index) => (
+                            <View
+                                key={player.id}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    marginBottom: 15,
+                                    padding: 10,
+                                    backgroundColor: index < 3 ? "#f9f2ff" : "#f8f9fa",
+                                    borderRadius: 8,
+                                }}
+                            >
+                                <Text style={{ width: 30, fontSize: 16, fontWeight: 'bold', textAlign: "center" }}>{index + 1}</Text>
+                                <Image
+                                    source={{ uri: "https://via.placeholder.com/40" }}
+                                    style={{ width: 40, height: 40, borderRadius: 20, marginHorizontal: 10 }}
+                                />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '600' }}>{player.name}</Text>
+                                    <Text style={{ color: "#777", fontSize: 14 }}>{player.position}</Text>
+                                </View>
+                                <Text style={{ fontSize: 16, fontWeight: "bold", color: "#4A235A" }}>
+                                    {getRandomStat(selectedCategory.min, selectedCategory.max)}
+                                </Text>
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
+            );
+        }
+
         switch (activeTab) {
             case "overview":
                 return (
                     <View style={{ padding: 20 }}>
                         <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
-                            Truy cập {team.shortName }
+                            Visit {team.shortName}
                         </Text>
                         <TouchableOpacity style={styles.linkButton}>
-                            <Text style={styles.linkText}>Ứng dụng chính thức</Text>
+                            <Text style={styles.linkText}>Official App</Text>
                             <AntDesign name="right" size={20} color="#4A235A" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.linkButton}
-                        onPress={() => Linking.openURL(team.website)}
+                            onPress={() => Linking.openURL(team.website)}
                         >
-                           
-                            <Text style={styles.linkText}>Website chính thức</Text>
-                          
+
+                            <Text style={styles.linkText}>Official Website</Text>
+
                             <AntDesign name="right" size={20} color="#4A235A" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.linkButton}>
-                            <Text style={styles.linkText}>Thông tin vé câu lạc bộ</Text>
+                            <Text style={styles.linkText}>Club Ticket Information</Text>
                             <AntDesign name="right" size={20} color="#4A235A" />
                         </TouchableOpacity>
                         {/* Mạng xã hội */}
@@ -225,7 +225,7 @@ if (selectedCategory) {
                             <FontAwesome name="twitter" size={30} color="#1da1f2" />
                             <FontAwesome name="youtube" size={30} color="#ff0000" />
                             <FontAwesome name="instagram" size={30} color="#e1306c" />
-                            <FontAwesome name="tiktok" size={30} color="#000" />
+                            {/* <FontAwesome name="tiktok" size={30} color="#000" /> */}
                         </View>
                     </View>
 
@@ -236,7 +236,7 @@ if (selectedCategory) {
                         {/* Nút chọn mùa giải */}
                         <View style={styles.filterContainer}>
                             <TouchableOpacity style={styles.seasonButton}>
-                                <Text style={styles.seasonButtonText}>Mùa 2023/24</Text>
+                                <Text style={styles.seasonButtonText}>Season 2023/24</Text>
                                 <AntDesign name="caretdown" size={12} color="#333" />
                             </TouchableOpacity>
                         </View>
@@ -248,131 +248,131 @@ if (selectedCategory) {
                             style={styles.teamTypeContainer}
                         >
                             <TouchableOpacity style={styles.teamTypeButtonActive}>
-                                <Text style={styles.teamTypeTextActive}>Đội hình chính</Text>
+                                <Text style={styles.teamTypeTextActive}>First Team</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.teamTypeButton}>
-                                <Text style={styles.teamTypeText}>Đội hình PL2</Text>
+                                <Text style={styles.teamTypeText}>PL2 Team</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.teamTypeButton}>
-                                <Text style={styles.teamTypeText}>Đội hình U18</Text>
+                                <Text style={styles.teamTypeText}>U18 Team</Text>
                             </TouchableOpacity>
                         </ScrollView>
 
-                        
-                        {/* Danh sách cầu thủ theo vị trí */}
-            <ScrollView>
-                {/* Thủ môn */}
-                <PositionSection title="Thủ môn" players={filterPlayersByPosition("Goalkeeper")} />
-                {/* Hậu vệ */}
-                <PositionSection title="Hậu vệ" players={filterPlayersByPosition("Back")} />
-                {/* Tiền vệ */}
-                <PositionSection title="Tiền vệ" players={filterPlayersByPosition("Centre")} />
-                {/* Tiền đạo */}
-                <PositionSection title="Tiền đạo" players={filterPlayersByPosition("Offence")} />
-            </ScrollView>
+
+                        {/* Player list by position */}
+                        <ScrollView>
+                            {/* Goalkeeper */}
+                            <PositionSection title="Goalkeeper" players={filterPlayersByPosition("Goalkeeper")} />
+                            {/* Defender */}
+                            <PositionSection title="Defender" players={filterPlayersByPosition("Back")} />
+                            {/* Midfielder */}
+                            <PositionSection title="Midfielder" players={filterPlayersByPosition("Centre")} />
+                            {/* Forward */}
+                            <PositionSection title="Forward" players={filterPlayersByPosition("Offence")} />
+                        </ScrollView>
                     </View>
                 );
             case "teamStats":
                 return (
                     <View style={{ padding: 20 }}>
-                        {/* Nút chọn mùa giải */}
+                        {/* Season selection button */}
                         <View style={styles.filterContainer}>
                             <TouchableOpacity style={styles.seasonButton}>
-                                <Text style={styles.seasonButtonText}>Mùa 2023/24</Text>
+                                <Text style={styles.seasonButtonText}>Season 2023/24</Text>
                                 <AntDesign name="caretdown" size={12} color="#333" />
                             </TouchableOpacity>
                         </View>
 
-                        {/* Thống kê Tấn công */}
+                        {/* Attack Stats */}
                         <View style={styles.statsSection}>
-                            <Text style={styles.statsSectionTitle}>Tấn công</Text>
+                            <Text style={styles.statsSectionTitle}>Attack</Text>
                             <View style={styles.statsGrid}>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.seasonGoals_overall}</Text>
-                                    <Text style={styles.statsLabel}>Bàn thắng</Text>
+                                    <Text style={styles.statsLabel}>Goals</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.scoredAVGHT_overall}</Text>
-                                    <Text style={styles.statsLabel}>Bàn/Trận</Text>
+                                    <Text style={styles.statsLabel}>Goals/Match</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.shotsOnTargetTotal_overall}</Text>
-                                    <Text style={styles.statsLabel}>Sút</Text>
+                                    <Text style={styles.statsLabel}>Shots</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{Math.round(teamStats.stats.shotsOnTargetTotal_overall / teamStats.stats.shotsTotal_overall * 100)}%
                                     </Text>
-                                    <Text style={styles.statsLabel}>Tỷ lệ sút trúng đích</Text>
+                                    <Text style={styles.statsLabel}>Shot Accuracy</Text>
                                 </View>
                             </View>
                         </View>
 
-                        {/* Thống kê Team Play */}
+                        {/* Team Play Stats */}
                         <View style={styles.statsSection}>
-                            <Text style={styles.statsSectionTitle}>Lối chơi</Text>
+                            <Text style={styles.statsSectionTitle}>Team Play</Text>
                             <View style={styles.statsGrid}>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.possessionAVG_overall}%</Text>
-                                    <Text style={styles.statsLabel}>Kiểm soát bóng</Text>
+                                    <Text style={styles.statsLabel}>Possession</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.additional_info.penalties_scored_overall}</Text>
-                                    <Text style={styles.statsLabel}>Ghi bàn từ penalty</Text>
+                                    <Text style={styles.statsLabel}>Penalty Goals</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.additional_info.throwins_team_num_overall}</Text>
-                                    <Text style={styles.statsLabel}>Số đường ném biên</Text>
+                                    <Text style={styles.statsLabel}>Throw-ins</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.cornersTotal_overall}</Text>
-                                    <Text style={styles.statsLabel}>Tổng số phạt góc</Text>
+                                    <Text style={styles.statsLabel}>Total Corners</Text>
                                 </View>
                             </View>
                         </View>
 
-                        {/* Thống kê Phòng thủ */}
+                        {/* Defense Stats */}
                         <View style={styles.statsSection}>
-                            <Text style={styles.statsSectionTitle}>Phòng thủ</Text>
+                            <Text style={styles.statsSectionTitle}>Defense</Text>
                             <View style={styles.statsGrid}>
-                            <View style={styles.statsItem}>
+                                <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.seasonConcededNum_overall}</Text>
-                                    <Text style={styles.statsLabel}>Bàn thua</Text>
+                                    <Text style={styles.statsLabel}>Goals Conceded</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.additional_info.penalties_conceded_overall}</Text>
-                                    <Text style={styles.statsLabel}>Bàn thua từ penalty</Text>
+                                    <Text style={styles.statsLabel}>Penalty Goals Conceded</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.seasonCSPercentage_overall}%</Text>
-                                    <Text style={styles.statsLabel}>Tỷ lệ giữ sạch lưới</Text>
+                                    <Text style={styles.statsLabel}>Clean Sheet Rate</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.seasonConcededMin_overall}</Text>
-                                    <Text style={styles.statsLabel}>Số phút trung bình để thủng lưới</Text>
+                                    <Text style={styles.statsLabel}>Avg Minutes per Goal Conceded</Text>
                                 </View>
-                                
+
                             </View>
                         </View>
 
-                        {/* Thống kê Khác */}
+                        {/* Other Stats */}
                         <View style={styles.statsSection}>
-                            <Text style={styles.statsSectionTitle}>Khác</Text>
+                            <Text style={styles.statsSectionTitle}>Other</Text>
                             <View style={styles.statsGrid}>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.cardsTotal_overall}</Text>
-                                    <Text style={styles.statsLabel}>Tổng số thẻ</Text>
+                                    <Text style={styles.statsLabel}>Total Cards</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.cornersAVG_overall}</Text>
-                                    <Text style={styles.statsLabel}>Phạt góc trung bình</Text>
+                                    <Text style={styles.statsLabel}>Avg Corners</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.foulsTotal_overall}</Text>
-                                    <Text style={styles.statsLabel}>Phạm lỗi</Text>
+                                    <Text style={styles.statsLabel}>Fouls</Text>
                                 </View>
                                 <View style={styles.statsItem}>
                                     <Text style={styles.statsValue}>{teamStats.stats.offsidesTotal_overall}</Text>
-                                    <Text style={styles.statsLabel}>Việt vị</Text>
+                                    <Text style={styles.statsLabel}>Offsides</Text>
                                 </View>
                             </View>
                         </View>
@@ -549,45 +549,91 @@ if (selectedCategory) {
                     </View>
                 );
             case "playerStats":
-                
-                                
-                return (
-                <ScrollView style={{ padding: 20 }}>
-            {/* Nút chọn mùa giải */}
-            <View style={{ marginBottom: 20 }}>
-                <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", padding: 10, backgroundColor: "#ddd", borderRadius: 5 }}>
-                    <Text style={{ fontSize: 16, marginRight: 5 }}>Mùa 2023/24</Text>
-                    <AntDesign name="caretdown" size={12} color="#333" />
-                </TouchableOpacity>
-            </View>
 
-            {categories.map((category, index) => {
-                const players = getRandomPlayers();
+
                 return (
-                    <View key={index} style={{ marginBottom: 20 }}>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <Text style={{ fontSize: 18, fontWeight: "bold" }}>{category.title}</Text>
-                            <TouchableOpacity onPress={() => setSelectedCategory(category)}>
-                                <Text style={{ color: "#4A235A" }}>Xem tất cả</Text>
-                                <AntDesign name="right" size={14} color="#4A235A" />
+                    <ScrollView style={{ padding: 20 }}>
+                        {/* Season selection button */}
+                        <View style={{ marginBottom: 20 }}>
+                            <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", padding: 10, backgroundColor: "#ddd", borderRadius: 5 }}>
+                                <Text style={{ fontSize: 16, marginRight: 5 }}>Season 2023/24</Text>
+                                <AntDesign name="caretdown" size={12} color="#333" />
                             </TouchableOpacity>
                         </View>
 
-                        {players.map((player) => (
-                            <View key={player.id} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-                                <Image source={{ uri: "https://via.placeholder.com/40" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
-                                <View style={{ flex: 1 }}>
-                                
-                                    <Text style={{ fontSize: 16 }}>{player.name}</Text>
-                                    <Text style={{ color: "#666" }}>{player.position}</Text>
-                                </View>
-                                <Text style={{ fontSize: 16, fontWeight: "bold" }}>{getRandomStat(category.min, category.max)}</Text>
-                            </View>
-                        ))}
-                    </View>
-                );
-            })}
-        </ScrollView>
+                        {categories.map((category, index) => {
+                            const players = getRandomPlayers();
+                            return (
+                                <View key={index} style={{ marginBottom: 20 }}>
+    <View
+        style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 10,
+        }}
+    >
+        <Text style={{ fontSize: 18, fontWeight: "bold" }}>{category.title}</Text>
+        <TouchableOpacity onPress={() => setSelectedCategory(category)}>
+            <Text style={{ color: "#4A235A" }}>View all</Text>
+        </TouchableOpacity>
+    </View>
+
+    {players.map((player, index) => (
+        <View
+            key={player.id}
+            style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 15,
+                padding: 10,
+                backgroundColor: index < 3 ? "#f9f2ff" : "#f8f9fa",
+                borderRadius: 8,
+            }}
+        >
+            <Text
+                style={{
+                    width: 30,
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    textAlign: "center",
+                }}
+            >
+                {index + 1}
+            </Text>
+            <Image
+                source={{ uri: "https://via.placeholder.com/40" }}
+                style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    marginHorizontal: 10,
+                }}
+            />
+            <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                    {player.name}
+                </Text>
+                <Text style={{ color: "#777", fontSize: 14 }}>
+                    {player.position}
+                </Text>
+            </View>
+            <Text
+                style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    color: "#4A235A",
+                }}
+            >
+                {getRandomStat(category.min, category.max)}
+            </Text>
+        </View>
+    ))}
+</View>
+
+                            );
+                        })}
+                    </ScrollView>
                 )
             default:
                 return null;
@@ -595,151 +641,124 @@ if (selectedCategory) {
     };
 
     return (
-        !team ? (<Text>Đang tải dữ liệu...</Text>): (
-            
+        !team ? (<Text>Loading...</Text>) : (
+
             <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
-            {/* Ảnh nền */}
-            <View style={{ position: "relative" }}>
-                <Image
-                    source={{ uri: "https://via.placeholder.com/500" }}
-                    style={{ width: "100%", height: 200, backgroundColor: teamColors.toLowerCase() }}
-                />
-                <TouchableOpacity
+                {/* Ảnh nền */}
+                <View style={{ position: "relative" }}>
+                    {/* <Image
+                        source={{ uri: "https://via.placeholder.com/500" }}
+                        style={{ width: "100%", height: 200, backgroundColor: teamColors.toLowerCase() }}
+                    /> */}
+                    <TouchableOpacity
+                        style={{
+                            position: "absolute",
+                            top: 40,
+                            left: 20,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            padding: 10,
+                            borderRadius: 20,
+                        }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Thông tin đội bóng */}
+                <View style={{ backgroundColor: "#c8102e", padding: 20 }}>
+                    <Image
+                        source={{ uri: team.crest || 'https://via.placeholder.com/80' }}
+                        style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10, alignSelf: "center" }}
+                    />
+                    <Text style={{ fontSize: 26, fontWeight: "bold", color: "#fff" }}>
+                        {team.shortName}
+                    </Text>
+                    <Text style={{ fontSize: 16, color: "#fff", marginTop: 5 }}>
+                        Est: {team.founded} • {team.address}
+                    </Text>
+                    <Text style={{ fontSize: 16, color: "#fff" }}>Capacity: 61,276</Text>
+                </View>
+
+                {/* Nút yêu thích và theo dõi */}
+                <View
                     style={{
-                        position: "absolute",
-                        top: 40,
-                        left: 20,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        padding: 10,
-                        borderRadius: 20,
+                        flexDirection: "row",
+                        justifyContent: "space-around",
+                        marginVertical: 15,
                     }}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-            </View>
+                    <Button
+                        icon="star-outline"
+                        mode="outlined"
+                        textColor="#c8102e"
+                        style={{ borderColor: "#c8102e" }}
+                    >
+                        Favourite
+                    </Button>
+                    <Button
+                        icon="bell-outline"
+                        mode="outlined"
+                        textColor="#c8102e"
+                        style={{ borderColor: "#c8102e" }}
+                    >
+                        Follow
+                    </Button>
+                </View>
 
-            {/* Thông tin đội bóng */}
-            <View style={{ backgroundColor: "#c8102e", padding: 20 }}>
-                <Text style={{ fontSize: 26, fontWeight: "bold", color: "#fff" }}>
-                    {team.shortName }
-                </Text>
-                <Text style={{ fontSize: 16, color: "#fff", marginTop: 5 }}>
-                    Thành lập: {team.founded} • {team.address}
-                </Text>
-                <Text style={{ fontSize: 16, color: "#fff" }}>Sức chứa: 61,276</Text>
-            </View>
-
-            {/* Nút yêu thích và theo dõi */}
-            <View
+                <View
+    style={{
+        flexDirection: "row",
+        justifyContent: "space-around",
+        borderBottomWidth: 1,
+        borderBottomColor: "#ddd",
+        backgroundColor: "#f8f9fa",
+        paddingVertical: 10,
+    }}
+>
+    {["overview", "squad", "teamStats", "playerStats"].map((tab) => {
+        const isActive = activeTab === tab;
+        return (
+            <TouchableOpacity
+                key={tab}
+                onPress={() => setActiveTab(tab)}
                 style={{
-                    flexDirection: "row",
-                    justifyContent: "space-around",
-                    marginVertical: 15,
+                    paddingVertical: 10,
+                    flex: 1,
+                    alignItems: "center",
                 }}
             >
-                <Button
-                    icon="star-outline"
-                    mode="outlined"
-                    textColor="#c8102e"
-                    style={{ borderColor: "#c8102e" }}
-                >
-                    Yêu thích
-                </Button>
-                <Button
-                    icon="bell-outline"
-                    mode="outlined"
-                    textColor="#c8102e"
-                    style={{ borderColor: "#c8102e" }}
-                >
-                    Theo dõi
-                </Button>
-            </View>
-
-            {/* Tabs */}
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-around",
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#ddd",
-                }}
-            >
-                <TouchableOpacity
-                    onPress={() => setActiveTab("overview")}
+                <View
                     style={{
-                        paddingVertical: 10,
-                        borderBottomWidth: 2,
-                        borderBottomColor: activeTab === "overview" ? "#4A235A" : "transparent",
+                        backgroundColor: isActive ? "#4A235A" : "transparent",
+                        borderColor: isActive ? "#4A235A" : "transparent",
+                        borderWidth: isActive ? 2 : 0,
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
                     }}
                 >
                     <Text
                         style={{
-                            color: activeTab === "overview" ? "#4A235A" : "#999",
-                            fontWeight: activeTab === "overview" ? "bold" : "normal",
+                            color: isActive ? "white" : "#4A235A",
+                            fontWeight: isActive ? "bold" : "normal",
+                            fontSize: 14,
                         }}
                     >
-                        Tổng quan
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => setActiveTab("squad")}
-                    style={{
-                        paddingVertical: 10,
-                        borderBottomWidth: 2,
-                        borderBottomColor: activeTab === "squad" ? "#4A235A" : "transparent",
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: activeTab === "squad" ? "#4A235A" : "#999",
-                            fontWeight: activeTab === "squad" ? "bold" : "normal",
-                        }}
-                    >
-                        Đội hình
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => setActiveTab("teamStats")}
-                    style={{
-                        paddingVertical: 10,
-                        borderBottomWidth: 2,
-                        borderBottomColor: activeTab === "teamStats" ? "#4A235A" : "transparent",
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: activeTab === "teamStats" ? "#4A235A" : "#999",
-                            fontWeight: activeTab === "teamStats" ? "bold" : "normal",
-                        }}
-                    >
-                        Thống kê đội
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => setActiveTab("playerStats")}
-                    style={{
-                        paddingVertical: 10,
-                        borderBottomWidth: 2,
-                        borderBottomColor: activeTab === "playerStats" ? "#4A235A" : "transparent",
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: activeTab === "playerStats" ? "#4A235A" : "#999",
-                            fontWeight: activeTab === "playerStats" ? "bold" : "normal",
-                        }}
-                    >
-                        Thống kê cầu thủ
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Nội dung tab */}
-            {renderTabContent()}
+                </View>
+            </TouchableOpacity>
+        );
+    })}
+</View>
 
 
-        </ScrollView>) 
-        
+                {/* Nội dung tab */}
+                {renderTabContent()}
+
+
+            </ScrollView>)
+
     );
 };
 
@@ -973,6 +992,7 @@ const styles = {
         color: '#333',
         fontWeight: '500',
     },
+    
 };
 
 export default TeamScreen;
