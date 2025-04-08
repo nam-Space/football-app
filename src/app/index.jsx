@@ -30,8 +30,7 @@ const RootPage = () => {
                     // router.replace("/(main)/match");
                 } else {
                     //error
-                    // router.replace("/(auth)/login");
-                    router.replace("/(tabs)/club");
+                    router.replace("/(auth)/login");
                 }
             } catch (e) {
                 Toast.show({
