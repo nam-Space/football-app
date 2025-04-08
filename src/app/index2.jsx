@@ -7,7 +7,7 @@ import { getUserAccountAPI } from "@/utils/api";
 import { useApp } from "@/context/AppContext";
 import Toast from "react-native-toast-message";
 
-// Keep the splash screen visible while we fetch resources
+// Giữ màn hình splash cho đến khi dữ liệu sẵn sàng
 SplashScreen.preventAutoHideAsync();
 
 const RootPage = () => {
@@ -16,32 +16,29 @@ const RootPage = () => {
     useEffect(() => {
         async function prepare() {
             try {
-                // Pre-load fonts, make any API calls you need to do here
+                // Gọi API để lấy thông tin người dùng
                 const res = await getUserAccountAPI();
                 if (res.data) {
-                    //success
                     setUser({
-                        ...res.data,
-                        access_token: await AsyncStorage.getItem(
-                            "access_token"
-                        ),
+                        user: res.data.user,
+                        access_token: await AsyncStorage.getItem("access_token"),
                     });
-                    router.replace("/(tabs)");
-                    // router.replace("/(main)/match");
+                    router.replace("/(tabs)"); // Điều hướng đến màn hình chính
                 } else {
-                    //error
-                    // router.replace("/(auth)/login");
-                    router.replace("/(tabs)/club");
+                    router.replace("/(tabs)/club"); // Nếu API lỗi, điều hướng tới trang Club
                 }
             } catch (e) {
                 Toast.show({
                     type: "error",
                     text1: "Error",
-                    text2: "Không thể kết tới API Backend...",
+                    text2: "Không thể kết nối tới API Backend...",
                     position: "bottom",
                 });
+
+                // Nếu có lỗi, vẫn chuyển hướng tới trang Club
+                router.replace("/(tabs)/club");
             } finally {
-                // Tell the application to render
+                // Ẩn màn hình splash
                 await SplashScreen.hideAsync();
             }
         }
@@ -49,7 +46,7 @@ const RootPage = () => {
         prepare();
     }, []);
 
-    return <></>;
+    return null; // Không cần hiển thị gì cả, vì chúng ta đã điều hướng
 };
 
 export default RootPage;
