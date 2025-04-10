@@ -1,5 +1,5 @@
 import axios from "@/utils/axios.customize";
-
+import apiFB from "../utils/configApiFoodBall";
 /* Video */
 export const getVideosAPI = () => {
     const url = `/api/videos`;
@@ -38,6 +38,15 @@ export const getNewsDetailAPI = (config) => {
 
 export const getRelatedNewsBattleAPI = (config) => {
     const url = `/api/news/related-news-battle`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
+
+export const getNewsHighlight = (config) => {
+    const url = `/api/news`;
     return axios.get(url, {
         params: {
             ...config
@@ -240,3 +249,26 @@ export const deleteCommentAPI = (id) => {
     const url = `/api/comments/delete/${id}`;
     return axios.delete(url);
 }
+
+export const getUpcomingMatches = async () => {
+    const today = new Date();
+    const plus2 = new Date();
+    plus2.setDate(today.getDate() + 2);
+
+    const format = (d) => d.toISOString().split("T")[0];
+    const fromDate = format(today);
+    const toDate = format(plus2);
+
+    const slug = `/competitions/PL/matches?dateFrom=${fromDate}&dateTo=${toDate}&status=SCHEDULED`;
+    const encodedSlug = encodeURIComponent(slug);
+
+    // const res = await axios.get("/api/matches/competitions/PL/matches?dateFrom=2025-04-05&dateTo=2025-04-05&status=SCHEDULED", {
+    //     // params: { slug: encodedSlug },
+    // });
+
+    const res = await apiFB.get("/competitions/PL/matches?dateFrom=2025-04-05&dateTo=2025-04-05&status=SCHEDULED");
+    console.log(res);
+
+    const matches = res?.data?.data?.matches || [];
+    return { matches };
+};
