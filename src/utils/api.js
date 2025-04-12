@@ -1,274 +1,90 @@
 import axios from "@/utils/axios.customize";
-import apiFB from "../utils/configApiFoodBall";
-/* Video */
-export const getVideosAPI = () => {
-    const url = `/api/videos`;
-    return axios.get(url);
+
+const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1';
+const FOOTBALL_DATA_URL = 'https://api.football-data.org/v4';
+const FOOTBALL_DATA_TOKEN = '9f593c01e6e74e1e8e36348290c1cc2f';
+
+// Tạo instance axios cho Football Data API
+const footballDataApi = axios.create({
+    baseURL: FOOTBALL_DATA_URL,
+    headers: {
+        'X-Auth-Token': FOOTBALL_DATA_TOKEN
+    }
+});
+
+// Tạo instance axios cho ESPN API
+const espnApi = axios.create({
+    baseURL: BASE_URL
+});
+
+// API Videos
+export const getVideosAPI = async () => {
+    try {
+        const response = await espnApi.get('/news');
+        // Lọc các bài viết có video
+        const videos = response.data.articles
+            .filter(article => article.video && article.video.links.source.HD)
+            .map(article => ({
+                title: article.headline,
+                thumbnail: article.video.thumbnail,
+                url: article.video.links.source.HD.href
+            }));
+        return videos;
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        throw error;
+    }
 };
 
-export const getRelatedVideosAPI = (keyword) => {
-    const url = `/api/videos/related-videos/${keyword}`;
-    return axios.get(url);
+// API News
+export const getNewsHighlight = async () => {
+    try {
+        const response = await espnApi.get('/news');
+        return response.data.articles.slice(0, 5); // Lấy 5 tin nổi bật
+    } catch (error) {
+        console.error('Error fetching news highlights:', error);
+        throw error;
+    }
 };
 
-export const getRelatedVideosBattleAPI = (config) => {
-    const url = `/api/videos/related-videos-battle`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
+export const getNewsFromESPN = async () => {
+    try {
+        const response = await espnApi.get('/news');
+        return response.data.articles;
+    } catch (error) {
+        console.error('Error fetching news from ESPN:', error);
+        throw error;
+    }
 };
 
-
-/* News */
-export const getRelatedNewsAPI = (keyword) => {
-    const url = `/api/news/related-news/${keyword}`;
-    return axios.get(url);
+export const getNewsDetail = async (url) => {
+    try {
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching news detail:', error);
+        throw error;
+    }
 };
 
-export const getNewsDetailAPI = (config) => {
-    const url = `/api/news/news-detail`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
+// API Matches
+export const getMatchesFromESPN = async () => {
+    try {
+        const response = await espnApi.get('/scoreboard');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching matches from ESPN:', error);
+        throw error;
+    }
 };
 
-export const getRelatedNewsBattleAPI = (config) => {
-    const url = `/api/news/related-news-battle`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getNewsHighlight = (config) => {
-    const url = `/api/news`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-
-/* User */
-export const loginUserAPI = (data) => {
-    const url = `/api/users/login`;
-    return axios.post(url, { ...data });
-};
-
-export const registerUserAPI = (data) => {
-    const url = `/api/users/register`;
-    return axios.post(url, { ...data });
-};
-
-export const getUserAccountAPI = (data) => {
-    const url = `/api/users/account`;
-    return axios.get(url);
-};
-
-export const updateUserFavouriteTeam = (data) => {
-    const url = `/api/users/update-favourite`;
-    return axios.post(url, {
-        ...data
-    });
-}
-
-export const getPlayerImageAPI = (playerName) => {
-    const url = `/api/players/player-image-url/${playerName}`;
-    return axios.get(url);
-}
-
-/* Match */
-
-export const getMatchesAPI = (slug) => {
-    const url = `/api/matches`;
-    return axios.get(url, {
-        params: {
-            slug
-        }
-    });
-};
-
-export const getMatchesOfTeamIdAPI = (teamId, config) => {
-    const url = `/api/matches/teamId/${teamId}`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getCompetitionMatchesAPI = (config) => {
-    const url = `/api/competitions/competition-matches`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getStatisticOfTeamIdAPI = (teamId) => {
-    const url = `/api/matches/statistics/${teamId}`;
-    return axios.get(url);
-};
-
-/* Battle */
-export const getBattleByTeamIdAPI = (config) => {
-    const url = `/api/battles`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getBattleByIdAPI = (id) => {
-    const url = `/api/battles/battle-detail/${id}`;
-    return axios.get(url);
-};
-
-export const getBattleStatisticByIdAPI = (id) => {
-    const url = `/api/battles/stats/${id}`;
-    return axios.get(url);
-};
-
-export const getBattleStatisticByTeamIdAPI = (config) => {
-    const url = `/api/battles/battle-stats`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getBattleReportByIdAPI = (id) => {
-    const url = `/api/battles/report/${id}`;
-    return axios.get(url);
-};
-
-export const getBattleReportByTeamIdAPI = (config) => {
-    const url = `/api/battles/battle-report`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getBattleCommentaryByBattleIdAPI = (id) => {
-    const url = `/api/battles/commentary/${id}`;
-    return axios.get(url);
-};
-
-export const getBattleCommentaryByTeamIdAPI = (config) => {
-    const url = `/api/battles/battle-commentary`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getBattleHighlightByTeamIdAPI = (config) => {
-    const url = `/api/battles/battle-highlights`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getBattleHeadToHeadByTeamIdAPI = (config) => {
-    const url = `/api/battles/head-to-head`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-export const getBattleLineupByIdAPI = (id) => {
-    const url = `/api/battles/lineup/${id}`;
-    return axios.get(url);
-};
-
-/* Team */
-export const getAllTeamAPI = () => {
-    const url = `/api/teams`;
-    return axios.get(url);
-};
-
-export const getTeamDetailAPI = (teamId) => {
-    const url = `/api/teams/${teamId}`;
-    return axios.get(url);
-};
-
-export const getTeamMatchesAPI = (teamId, config) => {
-    const url = `/api/teams/team-matches/${teamId}`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-/* Competitions */
-
-export const getCompetitionStandingDetailAPI = (config) => {
-    const url = `/api/competitions/standings`;
-    return axios.get(url, {
-        params: {
-            ...config
-        }
-    });
-};
-
-/* Comment */
-export const getAllCommentsByArticleIdAPI = (articleId) => {
-    const url = `/api/comments/${articleId}`;
-    return axios.get(url);
-}
-
-export const createCommentAPI = (articleId, data) => {
-    const url = `/api/comments/create/${articleId}`;
-    return axios.post(url, { ...data });
-}
-
-
-export const updateCommentAPI = (commentId, data) => {
-    const url = `/api/comments/update/${commentId}`;
-    return axios.put(url, { ...data });
-}
-
-export const deleteCommentAPI = (id) => {
-    const url = `/api/comments/delete/${id}`;
-    return axios.delete(url);
-}
-
-export const getUpcomingMatches = async () => {
-    const today = new Date();
-    const plus2 = new Date();
-    plus2.setDate(today.getDate() + 2);
-
-    const format = (d) => d.toISOString().split("T")[0];
-    const fromDate = format(today);
-    const toDate = format(plus2);
-
-    const slug = `/competitions/PL/matches?dateFrom=${fromDate}&dateTo=${toDate}&status=SCHEDULED`;
-    const encodedSlug = encodeURIComponent(slug);
-
-    // const res = await axios.get("/api/matches/competitions/PL/matches?dateFrom=2025-04-05&dateTo=2025-04-05&status=SCHEDULED", {
-    //     // params: { slug: encodedSlug },
-    // });
-
-    const res = await apiFB.get("/competitions/PL/matches?dateFrom=2025-04-05&dateTo=2025-04-05&status=SCHEDULED");
-    console.log(res);
-
-    const matches = res?.data?.data?.matches || [];
-    return { matches };
+// API Standings
+export const getCompetitionStandingDetailAPI = async () => {
+    try {
+        const response = await footballDataApi.get('/competitions/PL/standings');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching standings:', error);
+        throw error;
+    }
 };

@@ -63,6 +63,10 @@ const MoreScreen = () => {
         ]);
     };
 
+    const handleManageAccount = () => {
+        router.push("/(auth)/ManageAccount");
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -100,7 +104,10 @@ const MoreScreen = () => {
                 {/* Settings Section */}
                 <Text style={styles.sectionTitle}>Settings</Text>
                 <View style={styles.settingsContainer}>
-                    <TouchableOpacity style={styles.settingItem}>
+                    <TouchableOpacity 
+                    style={styles.settingItem}
+                    onPress={handleManageAccount}
+                    >
                         <Text style={styles.settingText}>Manage Account</Text>
                         <Ionicons
                             name="chevron-forward"
