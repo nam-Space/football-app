@@ -4,6 +4,8 @@ import { Button } from "react-native-paper";
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
 import { Link } from "expo-router";
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 // require('dotenv').config();
 
 const TeamScreen = () => {
@@ -104,7 +106,7 @@ const TeamScreen = () => {
                     return 'https://via.placeholder.com/80';  // Ảnh mặc định nếu không có dữ liệu
                 }
             } catch (error) {
-                console.error("Lỗi tải ảnh cầu thủ:", error);
+                // console.error("Lỗi tải ảnh cầu thủ:", error);
                 return 'https://via.placeholder.com/80'; // Ảnh mặc định khi lỗi
             }
         };
@@ -642,6 +644,7 @@ const TeamScreen = () => {
 
     return (
         !team ? (<Text>Loading...</Text>) : (
+            // <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
 
             <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
                 {/* Ảnh nền */}
@@ -711,8 +714,8 @@ const TeamScreen = () => {
         justifyContent: "space-around",
         borderBottomWidth: 1,
         borderBottomColor: "#ddd",
-        backgroundColor: "#f8f9fa",
-        paddingVertical: 10,
+        backgroundColor: "#fff",
+        paddingVertical: 2,
     }}
 >
     {["overview", "squad", "teamStats", "playerStats"].map((tab) => {
@@ -722,7 +725,7 @@ const TeamScreen = () => {
                 key={tab}
                 onPress={() => setActiveTab(tab)}
                 style={{
-                    paddingVertical: 10,
+                    paddingVertical: 5,
                     flex: 1,
                     alignItems: "center",
                 }}
@@ -733,7 +736,7 @@ const TeamScreen = () => {
                         borderColor: isActive ? "#4A235A" : "transparent",
                         borderWidth: isActive ? 2 : 0,
                         borderRadius: 8,
-                        paddingHorizontal: 12,
+                        paddingHorizontal: 8,
                         paddingVertical: 6,
                     }}
                 >
@@ -741,7 +744,7 @@ const TeamScreen = () => {
                         style={{
                             color: isActive ? "white" : "#4A235A",
                             fontWeight: isActive ? "bold" : "normal",
-                            fontSize: 14,
+                            fontSize: 13,
                         }}
                     >
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -757,8 +760,9 @@ const TeamScreen = () => {
                 {renderTabContent()}
 
 
-            </ScrollView>)
-
+            </ScrollView>
+            // </SafeAreaView>
+            )
     );
 };
 
