@@ -92,8 +92,8 @@ const Header = () => {
     const formatDate = () => {
         const date = new Date();
         return date.toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            day: 'numeric',
+        weekday: 'long',
+        day: 'numeric',
             month: 'long'
         });
     };
@@ -104,7 +104,7 @@ const Header = () => {
 
         // Hiển thị tỉ số cho trận đã kết thúc hoặc đang diễn ra
         if (status === 'FT' || status.includes("'") || status === 'HT') {
-            return (
+    return (
                 <Text style={styles.matchScore}>
                     {homeTeam.score} - {awayTeam.score}
                 </Text>
@@ -124,7 +124,7 @@ const Header = () => {
             <View style={styles.headerContent}>
                 <Text style={styles.headerTitle}>Matchday Live</Text>
                 <Text style={styles.headerDate}>{formatDate()}</Text>
-                
+
                 {loading ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#fff" />
@@ -145,7 +145,7 @@ const Header = () => {
                                             style={styles.matchTeamLogo}
                                         />
                                         <Text style={styles.matchTeamName}>{homeTeam.team.name}</Text>
-                                    </View>
+            </View>
                                     
                                     <View style={styles.matchScoreContainer}>
                                         {getMatchScore(match, status)}
@@ -161,11 +161,11 @@ const Header = () => {
                                             style={styles.matchTeamLogo}
                                         />
                                         <Text style={styles.matchTeamName}>{awayTeam.team.name}</Text>
-                                    </View>
-                                </View>
-                            );
+                </View>
+        </View>
+    );
                         })}
-                    </View>
+        </View>
                 ) : (
                     <View style={styles.noMatchesContainer}>
                         <Text style={styles.noMatchesText}>Không có lịch thi đấu</Text>
@@ -212,16 +212,16 @@ const NewsHighlight = () => {
     return (
         <View style={styles.newsHighlightContainer}>
             <View style={styles.newsHeader}>
-                <Image
-                    source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png' }}
+                    <Image
+                        source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png' }}
                     style={styles.newsLogo}
-                    resizeMode="contain"
-                />
-            </View>
+                        resizeMode="contain"
+                    />
+                </View>
 
-            {newsList.map((article, index) => (
-                <TouchableOpacity
-                    key={index}
+                {newsList.map((article, index) => (
+                    <TouchableOpacity
+                        key={index}
                     style={styles.newsCard}
                     onPress={() => {
                         router.push({
@@ -253,9 +253,9 @@ const NewsHighlight = () => {
                             {article.description}
                         </Text>
                         <Text style={styles.newsDate}>{article.publishedDate}</Text>
-                    </View>
-                </TouchableOpacity>
-            ))}
+                        </View>
+                    </TouchableOpacity>
+                ))}
         </View>
     );
 };
@@ -288,21 +288,21 @@ const MatchesTab = () => {
         fetchMatches();
     }, []);
 
-    const fetchMatches = async () => {
-        try {
+        const fetchMatches = async () => {
+            try {
             const data = await getMatchesFromESPN();
             if (data && data.events) {
                 setMatches(data.events);
             } else {
                 setError('Không có dữ liệu trận đấu');
             }
-            setLoading(false);
-        } catch (err) {
+                setLoading(false);
+            } catch (err) {
             console.error('Lỗi khi tải dữ liệu trận đấu:', err);
             setError('Không thể tải lịch thi đấu');
-            setLoading(false);
-        }
-    };
+                setLoading(false);
+            }
+        };
 
     if (loading) {
         return (
@@ -360,12 +360,12 @@ const MatchesTab = () => {
                         return (
                             <View key={match.id} style={styles.matchCard}>
                                 <View style={styles.matchTeamContainer}>
-                                    <Image
+                        <Image
                                         source={{ uri: homeTeam.team.logo }}
                                         style={styles.matchTeamLogo}
-                                    />
+                        />
                                     <Text style={styles.matchTeamName}>{homeTeam.team.name}</Text>
-                                </View>
+                    </View>
 
                                 <View style={styles.matchScoreContainer}>
                                     {status === 'FT' ? (
@@ -374,15 +374,15 @@ const MatchesTab = () => {
                                         <Text style={styles.matchTime}>{time}</Text>
                                     )}
                                     <Text style={styles.matchStatus}>{status}</Text>
-                                </View>
+                    </View>
 
                                 <View style={styles.matchTeamContainer}>
-                                    <Image
+                        <Image
                                         source={{ uri: awayTeam.team.logo }}
                                         style={styles.matchTeamLogo}
-                                    />
+                        />
                                     <Text style={styles.matchTeamName}>{awayTeam.team.name}</Text>
-                                </View>
+                    </View>
                             </View>
                         );
                     })}
@@ -458,24 +458,24 @@ const LeagueTableTab = () => {
                         <View key={index} style={[styles.leagueTableRow, getPositionStyle(item.position)]}>
                             <View style={styles.positionCell}>
                                 <Text style={styles.positionText}>{item.position}</Text>
-                            </View>
+                    </View>
                             <View style={styles.teamCell}>
-                                <Image
+                        <Image
                                     source={{ uri: item.teamLogo }}
                                     style={styles.teamLogo}
-                                />
+                        />
                                 <Text style={styles.teamText}>{item.team}</Text>
-                            </View>
+                    </View>
                             <View style={styles.statsCell}>
                                 <Text style={styles.statsText}>{item.played}</Text>
-                            </View>
+                    </View>
                             <View style={styles.statsCell}>
                                 <Text style={styles.statsText}>{item.goalDifference}</Text>
-                            </View>
+                    </View>
                             <View style={styles.pointsCell}>
                                 <Text style={styles.pointsText}>{item.points}</Text>
-                            </View>
-                        </View>
+                    </View>
+                </View>
                     );
                 })}
             </ScrollView>
