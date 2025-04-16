@@ -14,7 +14,7 @@ import {
 } from "@/utils/api";
 
 const TeamScreen = () => {
-    const { user } = useApp();
+    const { user ,setUser} = useApp();
     const { teamName1 } = useLocalSearchParams(); // <-- Nhận từ router
     const [activeTab, setActiveTab] = useState("overview"); // Thêm state quản lý tab
     const [team, setTeam] = useState(null);
@@ -747,7 +747,8 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
             website: team.website,
           };
           console.log("data team update", data)
-          await updateUserFavouriteTeam(data);
+          const res  = await updateUserFavouriteTeam(data);
+          setUser(res.data.data)
     } else{
         const data = {
             id: "",
@@ -760,7 +761,8 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
             website: "",
           };
           console.log("data team update", data)
-          await updateUserFavouriteTeam(data);
+          const res  = await updateUserFavouriteTeam(data);
+          setUser(res.data.data)
 
     }
     
