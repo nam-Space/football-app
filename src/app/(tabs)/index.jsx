@@ -12,6 +12,20 @@ import {
     getMatchesFromESPN,
 } from "@/utils/api";
 import { router } from "expo-router";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+    getCompetitionStandingDetailAPI,
+    getMatchesAPI,
+    getMatchesOfTeamIdAPI,
+    getStatisticOfTeamIdAPI,
+    getUpcomingMatches,
+    getTeamDetailAPI,
+    getNewsHighlight,
+    getVideosAPI,
+    getMatchesFromESPN,
+} from "@/utils/api";
+import { router } from "expo-router";
 import {
     SafeAreaView,
     StyleSheet,
@@ -22,7 +36,10 @@ import {
     TouchableOpacity,
     StatusBar,
     ActivityIndicator,
+    ActivityIndicator,
     Platform,
+    FlatList,
+    Linking
     FlatList,
     Linking
 } from 'react-native';
@@ -31,6 +48,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const App = () => {
     const [activeTab, setActiveTab] = useState('matches');
+    const [matches, setMatches] = useState([]); // lưu dữ liệu trận đấu
     const [matches, setMatches] = useState([]); // lưu dữ liệu trận đấu
 
     const renderTabContent = () => {
@@ -397,6 +415,13 @@ const MatchesTab = () => {
         return (
             <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{error}</Text>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
             </View>
         );
     }
@@ -495,19 +520,63 @@ const LeagueTableTab = () => {
 
     return (
         <View style={styles.leagueTableContainer}>
+    const [rankings, setRankings] = useState([]);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchStandings = async () => {
+            try {
+                const data = await getCompetitionStandingDetailAPI();
+                const tableData = data.standings[0].table.map((item) => ({
+                    position: item.position,
+                    team: item.team.name,
+                    teamLogo: item.team.crest,
+                    played: item.playedGames,
+                    goalDifference: item.goalDifference,
+                    points: item.points
+                }));
+                setRankings(tableData);
+            } catch (err) {
+                setError('Lỗi khi tải dữ liệu từ API');
+            }
+        };
+
+        fetchStandings();
+    }, []);
+
+    if (error) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.leagueTableContainer}>
             <View style={styles.leagueTableHeader}>
+                <View style={styles.positionCell}>
+                    <Text style={styles.headerText}>Pos</Text>
                 <View style={styles.positionCell}>
                     <Text style={styles.headerText}>Pos</Text>
                 </View>
                 <View style={styles.teamCell}>
                     <Text style={styles.headerText}>Club</Text>
+                <View style={styles.teamCell}>
+                    <Text style={styles.headerText}>Club</Text>
                 </View>
+                <View style={styles.statsCell}>
+                    <Text style={styles.headerText}>PL</Text>
                 <View style={styles.statsCell}>
                     <Text style={styles.headerText}>PL</Text>
                 </View>
                 <View style={styles.statsCell}>
                     <Text style={styles.headerText}>GD</Text>
+                <View style={styles.statsCell}>
+                    <Text style={styles.headerText}>GD</Text>
                 </View>
+                <View style={styles.pointsCell}>
+                    <Text style={styles.headerText}>Pts</Text>
                 <View style={styles.pointsCell}>
                     <Text style={styles.headerText}>Pts</Text>
                 </View>
@@ -575,9 +644,46 @@ const ClubHighlight = () => {
     //         </LinearGradient>
     //     </View>
     // );
+    // return (
+    //     <View style={styles.clubHighlight}>
+    //         <LinearGradient
+    //             colors={['#DA020E', '#C70000']}
+    //             style={styles.clubHighlightGradient}
+    //         >
+    //             <View style={styles.clubHighlightContent}>
+    //                 <Image
+    //                     source={{ uri: 'https://resources.premierleague.com/premierleague/badges/t1.png' }}
+    //                     style={styles.clubHighlightLogo}
+    //                 />
+    //                 <Text style={styles.clubHighlightName}>Manchester United</Text>
+    //                 <TouchableOpacity style={styles.clubHighlightButton}>
+    //                     <Text style={styles.clubHighlightButtonText}>Official site</Text>
+    //                     <Text style={styles.clubHighlightButtonIcon}>↗</Text>
+    //                 </TouchableOpacity>
+    //             </View>
+    //         </LinearGradient>
+    //     </View>
+    // );
 };
 
 const RelatedNews = () => {
+    // const newsItems = [
+    //     {
+    //         id: 1,
+    //         title: "Club News: What's changing things at Carrington",
+    //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
+    //     },
+    //     {
+    //         id: 2,
+    //         title: "Rashford: What's changing things at Carrington",
+    //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
+    //     },
+    //     {
+    //         id: 3,
+    //         title: "Club News: What's changing things at Carrington",
+    //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
+    //     }
+    // ];
     // const newsItems = [
     //     {
     //         id: 1,
@@ -613,9 +719,55 @@ const RelatedNews = () => {
     //         </TouchableOpacity>
     //     </View>
     // );
+    // return (
+    //     <View style={styles.relatedNews}>
+    //         <Text style={styles.sectionTitle}>Related News</Text>
+    //         {newsItems.map((item) => (
+    //             <View key={item.id} style={styles.relatedNewsItem}>
+    //                 <Image
+    //                     source={{ uri: item.logo }}
+    //                     style={styles.relatedNewsLogo}
+    //                 />
+    //                 <Text style={styles.relatedNewsTitle}>{item.title}</Text>
+    //             </View>
+    //         ))}
+    //         <TouchableOpacity style={styles.moreButton}>
+    //             <Text style={styles.moreButtonText}>More News →</Text>
+    //         </TouchableOpacity>
+    //     </View>
+    // );
 };
 
 const LatestNews = () => {
+    const [newsItems, setNewsItems] = useState([]);
+
+    useEffect(() => {
+        fetchLatestNews();
+    }, []);
+
+    const fetchLatestNews = async () => {
+        try {
+            const result = await getNewsHighlight();
+            const sliced = result.slice(0, 3).map(article => ({
+                id: article.id,
+                title: article.headline,
+                image: article.images?.[0]?.url || '',
+                description: article.description || '',
+                content: article.content || '',
+                url: article.links?.web?.href || '',
+                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            }));
+            setNewsItems(sliced);
+        } catch (err) {
+            console.error('❌ Failed to fetch latest news:', err);
+        }
+    };
     const [newsItems, setNewsItems] = useState([]);
 
     useEffect(() => {
@@ -668,11 +820,30 @@ const LatestNews = () => {
                         });
                     }}
                 >
+                <TouchableOpacity
+                    key={item.id}
+                    style={styles.latestNewsItem}
+                    onPress={() => {
+                        router.push({
+                            pathname: "/newsDetail",
+                            params: {
+                                id: item.id,
+                                title: item.title,
+                                image: item.image,
+                                description: item.description,
+                                content: item.content,
+                                url: item.url,
+                                publishedDate: item.publishedDate
+                            }
+                        });
+                    }}
+                >
                     <Image
                         source={{ uri: item.image }}
                         style={styles.latestNewsImage}
                     />
                     <Text style={styles.latestNewsTitle}>{item.title}</Text>
+                </TouchableOpacity>
                 </TouchableOpacity>
             ))}
             <TouchableOpacity
@@ -686,6 +857,22 @@ const LatestNews = () => {
 };
 
 const LatestVideos = () => {
+    const [videos, setVideos] = useState([]);
+
+    useEffect(() => {
+        fetchVideos();
+    }, []);
+
+    const fetchVideos = async () => {
+        try {
+            const result = await getVideosAPI();
+            if (Array.isArray(result)) {
+                setVideos(result.slice(0, 3));
+            }
+        } catch (err) {
+            console.error("❌ Error fetching videos:", err);
+        }
+    };
     const [videos, setVideos] = useState([]);
 
     useEffect(() => {
@@ -722,10 +909,29 @@ const LatestVideos = () => {
                         });
                     }}
                 >
+
+            {videos.map((video, index) => (
+                <TouchableOpacity
+                    key={index}
+                    style={styles.latestVideoItem}
+                    onPress={() => {
+                        router.push({
+                            pathname: "/videoDetail",
+                            params: {
+                                url: video.url,
+                                title: video.title,
+                                thumbnail: video.thumbnail
+                            }
+                        });
+                    }}
+                >
                     <Image
+                        source={{ uri: video.thumbnail }}
                         source={{ uri: video.thumbnail }}
                         style={styles.latestVideoImage}
                     />
+                    <Text style={styles.latestVideoTitle}>{video.title}</Text>
+                </TouchableOpacity>
                     <Text style={styles.latestVideoTitle}>{video.title}</Text>
                 </TouchableOpacity>
             ))}
@@ -749,32 +955,45 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     headerContainer: {
+    headerContainer: {
         paddingTop: Platform.OS === 'android' ? 20 : 0,
         paddingBottom: 15,
     },
     headerContent: {
         paddingHorizontal: 15,
+        paddingHorizontal: 15,
     },
+    headerTitle: {
     headerTitle: {
         color: 'white',
         fontSize: 32,
+        fontSize: 32,
         fontWeight: 'bold',
+        textAlign: 'center',
         textAlign: 'center',
         marginBottom: 5,
     },
+    headerDate: {
     headerDate: {
         color: 'white',
         fontSize: 16,
         textAlign: 'center',
         marginBottom: 15,
         opacity: 0.9,
+        textAlign: 'center',
+        marginBottom: 15,
+        opacity: 0.9,
     },
+    matchesContainer: {
+        marginTop: 10,
     matchesContainer: {
         marginTop: 10,
     },
     matchCard: {
         backgroundColor: 'white',
         borderRadius: 10,
+        padding: 12,
+        marginBottom: 10,
         padding: 12,
         marginBottom: 10,
         flexDirection: 'row',
@@ -785,11 +1004,22 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
+    matchTeamContainer: {
     matchTeamContainer: {
         flex: 2,
         alignItems: 'center',
+        alignItems: 'center',
     },
+    matchTeamLogo: {
+        width: 30,
+        height: 30,
+        marginBottom: 4,
     matchTeamLogo: {
         width: 30,
         height: 30,
@@ -801,13 +1031,26 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textAlign: 'center',
         width: '100%',
+    matchTeamName: {
+        color: '#333',
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
+        width: '100%',
     },
+    matchScoreContainer: {
+        flex: 1.5,
     matchScoreContainer: {
         flex: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 8,
+        justifyContent: 'center',
+        paddingHorizontal: 8,
     },
+    matchScore: {
+        color: '#333',
+        fontSize: 18,
     matchScore: {
         color: '#333',
         fontSize: 18,
@@ -824,9 +1067,22 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     loadingContainer: {
+    matchTime: {
+        color: '#333',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    matchStatus: {
+        color: '#666',
+        fontSize: 11,
+        marginTop: 2,
+    },
+    loadingContainer: {
         alignItems: 'center',
         marginTop: 20,
+        marginTop: 20,
     },
+    loadingText: {
     loadingText: {
         color: 'white',
         marginTop: 10,
@@ -834,9 +1090,17 @@ const styles = StyleSheet.create({
     noMatchesContainer: {
         alignItems: 'center',
         marginTop: 20,
+        marginTop: 10,
+    },
+    noMatchesContainer: {
+        alignItems: 'center',
+        marginTop: 20,
     },
     noMatchesText: {
+    noMatchesText: {
         color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
         fontSize: 16,
         fontWeight: '500',
     },
@@ -856,16 +1120,49 @@ const styles = StyleSheet.create({
         marginHorizontal: 15,
         marginBottom: 20,
         borderRadius: 15,
+    newsHighlightContainer: {
+        backgroundColor: '#37003C',
+        paddingVertical: 20,
+    },
+    newsHeader: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    newsLogo: {
+        width: 200,
+        height: 50,
+    },
+    newsCard: {
+        marginHorizontal: 15,
+        marginBottom: 20,
+        borderRadius: 15,
         overflow: 'hidden',
         backgroundColor: '#2C0031',
         elevation: 5,
+        backgroundColor: '#2C0031',
+        elevation: 5,
     },
+    newsImageContainer: {
     newsImageContainer: {
         width: '100%',
         height: 200,
         borderRadius: 15,
         overflow: 'hidden',
+        borderRadius: 15,
+        overflow: 'hidden',
     },
+    newsImage: {
+        width: '100%',
+        height: '100%',
+    },
+    newsTag: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        backgroundColor: '#00ff85',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
     newsImage: {
         width: '100%',
         height: '100%',
@@ -882,20 +1179,37 @@ const styles = StyleSheet.create({
     newsTagText: {
         color: '#37003C',
         fontWeight: 'bold',
+    newsTagText: {
+        color: '#37003C',
+        fontWeight: 'bold',
         fontSize: 12,
     },
+    newsContent: {
+        padding: 15,
     newsContent: {
         padding: 15,
     },
     newsTitle: {
         color: '#ffffff',
         fontSize: 18,
+    newsTitle: {
+        color: '#ffffff',
+        fontSize: 18,
         fontWeight: 'bold',
+        marginBottom: 8,
         marginBottom: 8,
     },
     newsDescription: {
         color: '#ffffff99',
+    newsDescription: {
+        color: '#ffffff99',
         fontSize: 14,
+        marginBottom: 8,
+        lineHeight: 20,
+    },
+    newsDate: {
+        color: '#ffffff80',
+        fontSize: 12,
         marginBottom: 8,
         lineHeight: 20,
     },
@@ -933,17 +1247,31 @@ const styles = StyleSheet.create({
     matchTabContainer: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+    matchTabContainer: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
         padding: 15,
     },
+    matchDateGroup: {
+        marginBottom: 20,
     matchDateGroup: {
         marginBottom: 20,
     },
     matchDateText: {
         fontSize: 16,
+    matchDateText: {
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 10,
+        color: '#333',
+        marginBottom: 10,
     },
+    matchCard: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 10,
     matchCard: {
         backgroundColor: 'white',
         borderRadius: 10,
@@ -957,11 +1285,23 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
+        justifyContent: 'space-between',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
+    matchTeamContainer: {
+        flex: 2,
     matchTeamContainer: {
         flex: 2,
         alignItems: 'center',
     },
+    matchTeamLogo: {
+        width: 30,
+        height: 30,
+        marginBottom: 4,
     matchTeamLogo: {
         width: 30,
         height: 30,
@@ -976,10 +1316,24 @@ const styles = StyleSheet.create({
     },
     matchScoreContainer: {
         flex: 1.5,
+    matchTeamName: {
+        color: '#333',
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
+        width: '100%',
+    },
+    matchScoreContainer: {
+        flex: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 8,
+        justifyContent: 'center',
+        paddingHorizontal: 8,
     },
+    matchScore: {
+        color: '#333',
+        fontSize: 18,
     matchScore: {
         color: '#333',
         fontSize: 18,
@@ -989,7 +1343,19 @@ const styles = StyleSheet.create({
         color: '#333',
         fontSize: 14,
         fontWeight: '600',
+    matchTime: {
+        color: '#333',
+        fontSize: 14,
+        fontWeight: '600',
     },
+    matchStatus: {
+        color: '#666',
+        fontSize: 11,
+        marginTop: 2,
+    },
+    leagueTableContainer: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
     matchStatus: {
         color: '#666',
         fontSize: 11,
@@ -1004,12 +1370,19 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         paddingVertical: 12,
         paddingHorizontal: 8,
+        backgroundColor: 'white',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
     },
     headerText: {
         color: '#333',
+    headerText: {
+        color: '#333',
         fontSize: 12,
+        fontWeight: 'bold',
+        textAlign: 'center',
         fontWeight: 'bold',
         textAlign: 'center',
     },
@@ -1018,17 +1391,34 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         paddingVertical: 12,
         paddingHorizontal: 8,
+        backgroundColor: 'white',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
         borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
         borderBottomColor: '#f0f0f0',
     },
     positionCell: {
+    positionCell: {
         width: 40,
+        justifyContent: 'center',
         justifyContent: 'center',
     },
     teamCell: {
         flex: 3,
+    teamCell: {
+        flex: 3,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingRight: 10,
+    },
+    statsCell: {
+        width: 40,
+        justifyContent: 'center',
+    },
+    pointsCell: {
+        width: 45,
+        justifyContent: 'center',
         paddingRight: 10,
     },
     statsCell: {
@@ -1047,9 +1437,27 @@ const styles = StyleSheet.create({
     positionText: {
         color: '#333',
         fontSize: 14,
+    teamLogo: {
+        width: 25,
+        height: 25,
+        marginRight: 8,
+    },
+    positionText: {
+        color: '#333',
+        fontSize: 14,
         fontWeight: 'bold',
         textAlign: 'center',
+        textAlign: 'center',
     },
+    teamText: {
+        color: '#333',
+        fontSize: 14,
+        flex: 1,
+    },
+    statsText: {
+        color: '#333',
+        fontSize: 14,
+        textAlign: 'center',
     teamText: {
         color: '#333',
         fontSize: 14,
@@ -1062,6 +1470,8 @@ const styles = StyleSheet.create({
     },
     pointsText: {
         color: '#333',
+    pointsText: {
+        color: '#333',
         fontSize: 14,
         fontWeight: 'bold',
         textAlign: 'center',
@@ -1069,7 +1479,20 @@ const styles = StyleSheet.create({
     championsLeague: {
         borderLeftWidth: 4,
         borderLeftColor: '#00ff85',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
+    championsLeague: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#00ff85',
+    },
+    europaLeague: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF7F00',
+    },
+    relegation: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF4444',
     europaLeague: {
         borderLeftWidth: 4,
         borderLeftColor: '#FF7F00',
@@ -1126,6 +1549,23 @@ const styles = StyleSheet.create({
     latestVideoTitle: {
         flex: 1,
         fontSize: 14,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 15,
+    },
+    moreButton: {
+        alignItems: 'center',
+        marginTop: 5,
+    },
+    moreButtonText: {
+        color: '#00b2ff',
+        fontWeight: 'bold',
+    },
+    liveMatchStatus: {
+        color: '#ff0000',
+        fontWeight: 'bold'
     },
     sectionTitle: {
         fontSize: 16,
