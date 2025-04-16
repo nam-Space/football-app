@@ -1,5 +1,5 @@
 import axios from "@/utils/axios.customize";
-
+import apiFB from "../utils/configApiFoodBall";
 /* Video */
 export const getVideosAPI = () => axios.get(`/api/videos`);
 
@@ -15,6 +15,15 @@ export const getRelatedNewsAPI = (keyword) =>
 
 export const getNewsDetailAPI = (config) =>
     axios.get(`/api/news/news-detail`, { params: { ...config } });
+
+export const getNewsHighlight = (config) => {
+    const url = `/api/news`;
+    return axios.get(url, {
+        params: {
+            ...config
+        }
+    });
+};
 
 export const getRelatedNewsBattleAPI = (config) =>
     axios.get(`/api/news/related-news-battle`, { params: { ...config } });
@@ -114,8 +123,53 @@ export const getAllCommentsByArticleIdAPI = (articleId) =>
 export const createCommentAPI = (articleId, data) =>
     axios.post(`/api/comments/create/${articleId}`, { ...data });
 
-export const updateCommentAPI = (commentId, data) =>
-    axios.put(`/api/comments/update/${commentId}`, { ...data });
+export const updateCommentAPI = (commentId, data) => {
+    const url = `/api/comments/update/${commentId}`;
+    return axios.put(url, { ...data });
+}
 
-export const deleteCommentAPI = (id) =>
-    axios.delete(`/api/comments/delete/${id}`);
+export const deleteCommentAPI = (id) => {
+    const url = `/api/comments/delete/${id}`;
+    return axios.delete(url);
+}
+
+export const getUpcomingMatches = async () => {
+    const today = new Date();
+    const plus2 = new Date();
+    plus2.setDate(today.getDate() + 2);
+
+    const format = (d) => d.toISOString().split("T")[0];
+    const fromDate = format(today);
+    const toDate = format(plus2);
+
+    const slug = `/competitions/PL/matches?dateFrom=${fromDate}&dateTo=${toDate}&status=SCHEDULED`;
+    const encodedSlug = encodeURIComponent(slug);
+
+    const res = await apiFB.get("/competitions/PL/matches?dateFrom=2025-04-05&dateTo=2025-04-05&status=SCHEDULED");
+    console.log(res);
+
+    const matches = res?.data?.data?.matches || [];
+    return { matches };
+};
+
+export const getVideos = async () => {
+    try {
+        const response = await fetch('https://www.premierleague.com/api/v1/video/latest');
+        const data = await response.json();
+        return data.videos || [];
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        return [];
+    }
+};
+
+export const getMatchesFromESPN = async () => {
+    try {
+        const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Lỗi khi gọi API matches:', error);
+        throw error;
+    }
+};

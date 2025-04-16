@@ -1,4 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+    getCompetitionStandingDetailAPI,
+    getMatchesAPI,
+    getMatchesOfTeamIdAPI,
+    getStatisticOfTeamIdAPI,
+    getUpcomingMatches,
+    getTeamDetailAPI,
+    getNewsHighlight,
+    getVideosAPI,
+    getMatchesFromESPN,
+} from "@/utils/api";
+import { router } from "expo-router";
 import {
     SafeAreaView,
     StyleSheet,
@@ -8,13 +21,17 @@ import {
     ScrollView,
     TouchableOpacity,
     StatusBar,
+    ActivityIndicator,
     Platform,
-    FlatList
+    FlatList,
+    Linking
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const App = () => {
     const [activeTab, setActiveTab] = useState('matches');
+    const [matches, setMatches] = useState([]); // lưu dữ liệu trận đấu
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -32,8 +49,6 @@ const App = () => {
             <StatusBar barStyle="light-content" backgroundColor="#e5006d" />
             <ScrollView style={styles.scrollView}>
                 <Header />
-                <MatchCards />
-                <MatchdayBanner />
                 <NewsHighlight />
                 <TabSelector activeTab={activeTab} setActiveTab={setActiveTab} />
                 {renderTabContent()}
@@ -42,149 +57,216 @@ const App = () => {
                 <LatestNews />
                 <LatestVideos />
             </ScrollView>
-            {/* <BottomNavigation /> */}
         </SafeAreaView>
     );
 };
 
 const Header = () => {
+    const [matches, setMatches] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchMatches();
+    }, []);
+
+    const fetchMatches = async () => {
+        try {
+            const data = await getMatchesFromESPN();
+            if (data && data.events) {
+                setMatches(data.events.slice(0, 5));
+                console.log('Matches data:', data.events.slice(0, 5)); // Debug log
+            }
+            setLoading(false);
+        } catch (err) {
+            console.error('Lỗi khi tải lịch thi đấu:', err);
+            setLoading(false);
+        }
+    };
+
+    const formatMatchTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const formatDate = () => {
+        const date = new Date();
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long'
+        });
+    };
+
+    const getMatchScore = (match, status) => {
+        const homeTeam = match.competitions[0].competitors.find(c => c.homeAway === 'home');
+        const awayTeam = match.competitions[0].competitors.find(c => c.homeAway === 'away');
+
+        // Hiển thị tỉ số cho trận đã kết thúc hoặc đang diễn ra
+        if (status === 'FT' || status.includes("'") || status === 'HT') {
+            return (
+                <Text style={styles.matchScore}>
+                    {homeTeam.score} - {awayTeam.score}
+                </Text>
+            );
+        }
+        // Hiển thị thời gian cho trận chưa bắt đầu
+        return <Text style={styles.matchTime}>{formatMatchTime(match.date)}</Text>;
+    };
+
     return (
         <LinearGradient
-            colors={['#e5006d', '#ff0066']}
-            style={styles.header}
+            colors={['#ff0080', '#ff8000']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.headerContainer}
         >
             <View style={styles.headerContent}>
-                <Image
-                    source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-1.png' }}
-                    style={styles.premierLogo}
-                    resizeMode="contain"
-                />
-                <Text style={styles.matchdayTitle}>Matchday Live</Text>
-                <Text style={styles.dateText}>Saturday 22 February</Text>
+                <Text style={styles.headerTitle}>Matchday Live</Text>
+                <Text style={styles.headerDate}>{formatDate()}</Text>
+
+                {loading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#fff" />
+                        <Text style={styles.loadingText}>Đang tải lịch thi đấu...</Text>
+                    </View>
+                ) : matches.length > 0 ? (
+                    <View style={styles.matchesContainer}>
+                        {matches.map((match) => {
+                            const homeTeam = match.competitions[0].competitors.find(c => c.homeAway === 'home');
+                            const awayTeam = match.competitions[0].competitors.find(c => c.homeAway === 'away');
+                            console.log(awayTeam)
+                            console.log("ten doi:" + awayTeam.team.displayName)
+                            const status = match.status.type.shortDetail;
+
+                            return (
+                                <View key={match.id} style={styles.matchCard}>
+                                    <TouchableOpacity style={styles.matchTeamContainer}
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: homeTeam.team.displayName } })}
+                                        // onPress={() => router.push(pathname:"/Club",  params: { teamName1: homeTeam.team.shortDisplayName } )}}
+                                    >
+                                        <Image
+                                            source={{ uri: homeTeam.team.logo }}
+                                            style={styles.matchTeamLogo}
+
+                                        />
+                                        <Text style={styles.matchTeamName}>{homeTeam.team.name}</Text>
+                                    </TouchableOpacity>
+
+                                    <View style={styles.matchScoreContainer}>
+                                        {getMatchScore(match, status)}
+                                        <Text style={[
+                                            styles.matchStatus,
+                                            (status.includes("'") || status === 'HT') && styles.liveMatchStatus
+                                        ]}>{status}</Text>
+                                    </View>
+
+                                    <TouchableOpacity style={styles.matchTeamContainer}
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: awayTeam.team.displayName } })}
+                                        // onPress={() => router.push({ pathname: "/(tabs)/club", params: { teamName1: awayTeam.team.shortDisplayName } })}
+                                    >
+                                        <Image
+                                            source={{ uri: awayTeam.team.logo }}
+                                            style={styles.matchTeamLogo}
+                                        />
+                                        <Text style={styles.matchTeamName}>{awayTeam.team.name}</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            );
+                        })}
+                    </View>
+                ) : (
+                    <View style={styles.noMatchesContainer}>
+                        <Text style={styles.noMatchesText}>Không có lịch thi đấu</Text>
+                    </View>
+                )}
             </View>
         </LinearGradient>
     );
 };
 
-const MatchCards = () => {
-    const matches = [
-        {
-            id: 1,
-            homeTeam: "Leicester",
-            homeTeamLogo: "https://resources.premierleague.com/premierleague/badges/t13.png",
-            awayTeam: "Brentford",
-            awayTeamLogo: "https://resources.premierleague.com/premierleague/badges/t94.png",
-            time: "03:00"
-        },
-        {
-            id: 2,
-            homeTeam: "Leicester",
-            homeTeamLogo: "https://resources.premierleague.com/premierleague/badges/t13.png",
-            awayTeam: "Arsenal",
-            awayTeamLogo: "https://resources.premierleague.com/premierleague/badges/t3.png",
-            time: "03:00"
-        },
-        {
-            id: 3,
-            homeTeam: "Leicester",
-            homeTeamLogo: "https://resources.premierleague.com/premierleague/badges/t13.png",
-            awayTeam: "Man Utd",
-            awayTeamLogo: "https://resources.premierleague.com/premierleague/badges/t1.png",
-            time: "03:00"
-        }
-    ];
-
-    return (
-        <View style={styles.matchCardsContainer}>
-            {matches.map((match) => (
-                <View key={match.id} style={styles.matchCard}>
-                    <View style={styles.matchContent}>
-                        <View style={styles.teamContainer}>
-                            <Text style={styles.teamName}>{match.homeTeam}</Text>
-                            <Image
-                                source={{ uri: match.homeTeamLogo }}
-                                style={styles.teamLogo}
-                            />
-                        </View>
-                        <View style={styles.scoreContainer}>
-                            <Text style={styles.scoreText}>{match.time}</Text>
-                        </View>
-                        <View style={styles.teamContainer}>
-                            <Image
-                                source={{ uri: match.awayTeamLogo }}
-                                style={styles.teamLogo}
-                            />
-                            <Text style={styles.teamName}>{match.awayTeam}</Text>
-                        </View>
-                    </View>
-                </View>
-            ))}
-        </View>
-    );
-};
-
-const MatchdayBanner = () => {
-    return (
-        <View style={styles.matchdayBanner}>
-            <Text style={styles.matchdayBannerText}>Matchday Live</Text>
-            <Text style={styles.arrowText}>→</Text>
-        </View>
-    );
-};
-
 const NewsHighlight = () => {
+    const [newsList, setNewsList] = useState([]);
+
+    useEffect(() => {
+        fetchNews();
+    }, []);
+
+    const fetchNews = async () => {
+        try {
+            const result = await getNewsHighlight();
+            const selectedArticles = result.slice(0, 3).map(article => ({
+                id: article.id,
+                title: article.headline,
+                description: article.description,
+                image: article.images?.[0]?.url,
+                url: article.links?.web?.href,
+                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            }));
+
+            setNewsList(selectedArticles);
+        } catch (err) {
+            console.error('❌ Failed to fetch ESPN news:', err);
+        }
+    };
+
+    if (newsList.length === 0) return null;
+
     return (
-        <View style={styles.newsHighlight}>
-            <Image
-                source={{ uri: 'https://resources.premierleague.pulselive.com/photo-resources/2025/03/23/b49f290e-6341-49d6-bbb1-5a7dbdf50a1b/Bernardo-Raya-Cunha-Elanga.jpg?width=1400&height=800' }}
-                style={styles.newsHighlightImage}
-            />
-            <View style={styles.newsHighlightOverlay}>
-                <Text style={styles.newsHighlightTitle}>
-                    Watch matches Appear as he joins top five Premier League scorers
-                </Text>
-                <Text style={styles.newsHighlightSubtitle}>
-                    Leicester forward's 14th Premier League goal moves him level with Erling Haaland in the race for the Golden Boot
-                </Text>
-            </View>
-            <View style={styles.newsHighlightGallery}>
+        <View style={styles.newsHighlightContainer}>
+            <View style={styles.newsHeader}>
                 <Image
-                    source={{ uri: 'https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800' }}
-                    style={styles.newsHighlightGalleryImage}
-                />
-                <Image
-                    source={{ uri: 'https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800' }}
-                    style={styles.newsHighlightGalleryImage}
+                    source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png' }}
+                    style={styles.newsLogo}
+                    resizeMode="contain"
                 />
             </View>
-            <View style={styles.newsHighlightButtons}>
-                <TouchableOpacity style={styles.newsHighlightButton}>
-                    <Text style={styles.newsHighlightButtonText}>Don't Get the corner flag</Text>
+
+            {newsList.map((article, index) => (
+                <TouchableOpacity
+                    key={index}
+                    style={styles.newsCard}
+                    onPress={() => {
+                        router.push({
+                            pathname: "/newsDetail",
+                            params: {
+                                id: article.id,
+                                title: article.title,
+                                image: article.image,
+                                description: article.description,
+                                url: article.url,
+                                publishedDate: article.publishedDate
+                            }
+                        });
+                    }}
+                >
+                    <View style={styles.newsImageContainer}>
+                        <Image
+                            source={{ uri: article.image }}
+                            style={styles.newsImage}
+                            resizeMode="cover"
+                        />
+                        <View style={styles.newsTag}>
+                            <Text style={styles.newsTagText}>News</Text>
+                        </View>
+                    </View>
+                    <View style={styles.newsContent}>
+                        <Text style={styles.newsTitle} numberOfLines={2}>{article.title}</Text>
+                        <Text style={styles.newsDescription} numberOfLines={2}>
+                            {article.description}
+                        </Text>
+                        <Text style={styles.newsDate}>{article.publishedDate}</Text>
+                    </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.newsHighlightButton}>
-                    <Text style={styles.newsHighlightButtonText}>Don't Get the corner flag</Text>
-                </TouchableOpacity>
-            </View>
-            <View style={styles.newsHighlightInfo}>
-                <View style={styles.newsHighlightInfoItem}>
-                    <View style={styles.newsHighlightInfoIcon}>
-                        <Text style={styles.newsHighlightInfoIconText}>GW</Text>
-                    </View>
-                    <Text style={styles.newsHighlightInfoText}>Sat, My FPL: How changes around my team this evening</Text>
-                </View>
-                <View style={styles.newsHighlightInfoItem}>
-                    <View style={styles.newsHighlightInfoIcon}>
-                        <Text style={styles.newsHighlightInfoIconText}>GW</Text>
-                    </View>
-                    <Text style={styles.newsHighlightInfoText}>Sat, My FPL: How changes around my team this evening</Text>
-                </View>
-                <View style={styles.newsHighlightInfoItem}>
-                    <View style={styles.newsHighlightInfoIcon}>
-                        <Text style={styles.newsHighlightInfoIconText}>GW</Text>
-                    </View>
-                    <Text style={styles.newsHighlightInfoText}>Sat, My FPL: How changes around my team this evening</Text>
-                </View>
-            </View>
+            ))}
         </View>
     );
 };
@@ -209,284 +291,454 @@ const TabSelector = ({ activeTab, setActiveTab }) => {
 };
 
 const MatchesTab = () => {
+    const [matches, setMatches] = useState({}); // Khởi tạo là object rỗng thay vì mảng rỗng
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchMatches();
+    }, []);
+
+    const fetchMatches = async () => {
+        try {
+            const today = new Date();
+            const nextMonth = new Date();
+            nextMonth.setMonth(today.getMonth() + 1);
+
+            const dateFrom = today.toISOString().split('T')[0];
+            const dateTo = nextMonth.toISOString().split('T')[0];
+
+            console.log('Date range:', { dateFrom, dateTo }); // Debug log
+
+            const res = await getMatchesAPI(`competitions/PL/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`);
+
+            if (res && res.data && res.data.matches) {
+                const allMatches = res.data.matches;
+                console.log('All matches:', allMatches); // Debug log
+
+                // Sắp xếp theo thời gian tăng dần
+                const sortedMatches = allMatches.sort((a, b) =>
+                    new Date(a.utcDate) - new Date(b.utcDate)
+                );
+
+                // Lấy 10 trận sắp tới
+                const next10Matches = sortedMatches.slice(0, 10);
+                console.log('Next 10 matches:', next10Matches); // Debug log
+
+                const groupedMatches = groupMatchesByDate(next10Matches);
+                console.log('Grouped matches:', groupedMatches); // Debug log
+
+                setMatches(groupedMatches);
+            } else {
+                console.log('No matches found in Premier League'); // Debug log
+                setError('Không có trận đấu nào sắp diễn ra');
+            }
+            setLoading(false);
+        } catch (err) {
+            console.error('Lỗi khi tải dữ liệu trận đấu:', err);
+            setError('Không thể tải lịch thi đấu');
+            setLoading(false);
+        }
+    };
+
+    const groupMatchesByDate = (matches) => {
+        if (!Array.isArray(matches)) {
+            console.log('Invalid matches data:', matches); // Debug log
+            return {};
+        }
+
+        return matches.reduce((groups, match) => {
+            if (!match || !match.utcDate) {
+                console.log('Invalid match data:', match); // Debug log
+                return groups;
+            }
+
+            const date = new Date(match.utcDate).toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            });
+
+            if (!groups[date]) {
+                groups[date] = [];
+            }
+            groups[date].push(match);
+            return groups;
+        }, {});
+    };
+
+    const formatTime = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const getScoreDisplay = (match) => {
+        if (!match) return '';
+        if (match.status === "FINISHED") {
+            return `${match.score.fullTime.home} - ${match.score.fullTime.away}`;
+        } else {
+            return formatTime(match.utcDate);
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#00ff85" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
     return (
-        <View style={styles.tabContent}>
-            <View style={styles.matchweekHeader}>
-                <Text style={styles.matchweekTitle}>Matchweek 28</Text>
-            </View>
-            <View style={styles.matchweekSubheader}>
-                <Text style={styles.matchweekSubheaderText}>All times shown are your local time</Text>
-            </View>
-            <View style={styles.matchweekDateHeader}>
-                <Text style={styles.matchweekDateText}>Saturday 09 March</Text>
-            </View>
+        <View style={styles.matchTabContainer}>
+            {Object.entries(matches).length > 0 ? (
+                Object.entries(matches).map(([date, dayMatches]) => (
+                    <View key={date} style={styles.matchDateGroup}>
+                        <Text style={styles.matchDateText}>{date}</Text>
+                        {Array.isArray(dayMatches) && dayMatches.map((match) => (
+                            <TouchableOpacity
+                                key={match.id}
+                                style={styles.matchCard}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/(main)/matchDetail",
+                                        params: {
+                                            homeTeamId: match.homeTeam.id,
+                                            awayTeamId: match.awayTeam.id,
+                                            matchDate: match.utcDate.split('T')[0],
+                                        },
+                                    })
+                                }
+                            >
+                                <TouchableOpacity 
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: match.homeTeam.shortName } })}
+                                
+                                style={styles.matchTeamContainer}>
+                                    <Image
+                                        source={{ uri: match.homeTeam.crest }}
+                                        style={styles.matchTeamLogo}
+                                    />
+                                    <Text style={styles.matchTeamName}>{match.homeTeam.shortName}</Text>
+                                </TouchableOpacity>
 
-            {/* Matches for Saturday */}
-            {[1, 2, 3, 4].map((index) => (
-                <View key={index} style={styles.matchweekMatch}>
-                    <View style={styles.matchweekTeamContainer}>
-                        <Image
-                            source={{ uri: 'https://resources.premierleague.com/premierleague/badges/t13.png' }}
-                            style={styles.matchweekTeamLogo}
-                        />
+                                <View style={styles.matchScoreContainer}>
+                                    <Text style={styles.matchScore}>{getScoreDisplay(match)}</Text>
+                                    <Text style={styles.matchStatus}>{match.status}</Text>
+                                </View>
+
+                                <TouchableOpacity 
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: match.awayTeam.shortName } })}
+                                style={styles.matchTeamContainer}>
+                                    <Image
+                                        source={{ uri: match.awayTeam.crest }}
+                                        style={styles.matchTeamLogo}
+                                    />
+                                    <Text style={styles.matchTeamName}>{match.awayTeam.shortName}</Text>
+                                </TouchableOpacity>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                    <View style={styles.matchweekTimeContainer}>
-                        <Text style={styles.matchweekTimeText}>21:00</Text>
-                    </View>
-                    <View style={styles.matchweekTeamContainer}>
-                        <Image
-                            source={{ uri: 'https://resources.premierleague.com/premierleague/badges/t1.png' }}
-                            style={styles.matchweekTeamLogo}
-                        />
-                    </View>
-                    <TouchableOpacity style={styles.matchweekArrow}>
-                        <Text style={styles.matchweekArrowText}>→</Text>
-                    </TouchableOpacity>
+                ))
+            ) : (
+                <View style={styles.noMatchesContainer}>
+                    <Text style={styles.noMatchesText}>Không có trận đấu nào sắp diễn ra</Text>
                 </View>
-            ))}
-
-            <View style={styles.viewAllFixtures}>
-                <Text style={styles.viewAllFixturesText}>View all fixtures →</Text>
-            </View>
+            )}
         </View>
     );
 };
 
 const LeagueTableTab = () => {
-    const tableData = Array(12).fill().map((_, index) => ({
-        position: index + 1,
-        team: "Manchester United",
-        teamLogo: "https://resources.premierleague.com/premierleague/badges/t1.png",
-        played: 25,
-        goalDifference: "+42",
-        points: 60
-    }));
+    const [rankings, setRankings] = useState([]);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchStandings = async () => {
+            try {
+                const data = await getCompetitionStandingDetailAPI();
+                const tableData = data.standings[0].table.map((item) => ({
+                    position: item.position,
+                    team: item.team.name,
+                    teamLogo: item.team.crest,
+                    played: item.playedGames,
+                    goalDifference: item.goalDifference,
+                    points: item.points
+                }));
+                setRankings(tableData);
+            } catch (err) {
+                setError('Lỗi khi tải dữ liệu từ API');
+            }
+        };
+
+        fetchStandings();
+    }, []);
+
+    if (error) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={styles.tabContent}>
+        <View style={styles.leagueTableContainer}>
             <View style={styles.leagueTableHeader}>
-                <View style={styles.leagueTableHeaderCell}>
-                    <Text style={styles.leagueTableHeaderText}>Pos</Text>
+                <View style={styles.positionCell}>
+                    <Text style={styles.headerText}>Pos</Text>
                 </View>
-                <View style={[styles.leagueTableHeaderCell, styles.leagueTableTeamCell]}>
-                    <Text style={styles.leagueTableHeaderText}></Text>
+                <View style={styles.teamCell}>
+                    <Text style={styles.headerText}>Club</Text>
                 </View>
-                <View style={styles.leagueTableHeaderCell}>
-                    <Text style={styles.leagueTableHeaderText}>Pl</Text>
+                <View style={styles.statsCell}>
+                    <Text style={styles.headerText}>PL</Text>
                 </View>
-                <View style={styles.leagueTableHeaderCell}>
-                    <Text style={styles.leagueTableHeaderText}>GD</Text>
+                <View style={styles.statsCell}>
+                    <Text style={styles.headerText}>GD</Text>
                 </View>
-                <View style={styles.leagueTableHeaderCell}>
-                    <Text style={styles.leagueTableHeaderText}>Pts</Text>
+                <View style={styles.pointsCell}>
+                    <Text style={styles.headerText}>Pts</Text>
                 </View>
             </View>
 
-            {tableData.map((item, index) => (
-                <View key={index} style={styles.leagueTableRow}>
-                    <View style={styles.leagueTableCell}>
-                        <Text style={styles.leagueTablePositionText}>{item.position}</Text>
-                    </View>
-                    <View style={[styles.leagueTableCell, styles.leagueTableTeamCell]}>
-                        <Image
-                            source={{ uri: item.teamLogo }}
-                            style={styles.leagueTableTeamLogo}
-                        />
-                        <Text style={styles.leagueTableTeamText}>{item.team}</Text>
-                    </View>
-                    <View style={styles.leagueTableCell}>
-                        <Text style={styles.leagueTableText}>{item.played}</Text>
-                    </View>
-                    <View style={styles.leagueTableCell}>
-                        <Text style={styles.leagueTableText}>{item.goalDifference}</Text>
-                    </View>
-                    <View style={styles.leagueTableCell}>
-                        <Text style={styles.leagueTableText}>{item.points}</Text>
-                    </View>
-                </View>
-            ))}
+            <ScrollView>
+                {rankings.map((item, index) => {
+                    const getPositionStyle = (position) => {
+                        if (position <= 4) return styles.championsLeague;
+                        if (position === 5) return styles.europaLeague;
+                        if (position >= 18) return styles.relegation;
+                        return null;
+                    };
+
+                    return (
+                        <View key={index} style={[styles.leagueTableRow, getPositionStyle(item.position)]}>
+                            <View style={styles.positionCell}>
+                                <Text style={styles.positionText}>{item.position}</Text>
+                            </View>
+                            <TouchableOpacity 
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: item.team } })}
+                            
+                            style={styles.teamCell}>
+                                <Image
+                                    source={{ uri: item.teamLogo }}
+                                    style={styles.teamLogo}
+                                />
+                                <Text style={styles.teamText}>{item.team}</Text>
+                            </TouchableOpacity>
+                            <View style={styles.statsCell}>
+                                <Text style={styles.statsText}>{item.played}</Text>
+                            </View>
+                            <View style={styles.statsCell}>
+                                <Text style={styles.statsText}>{item.goalDifference}</Text>
+                            </View>
+                            <View style={styles.pointsCell}>
+                                <Text style={styles.pointsText}>{item.points}</Text>
+                            </View>
+                        </View>
+                    );
+                })}
+            </ScrollView>
         </View>
     );
 };
 
 const ClubHighlight = () => {
-    return (
-        <View style={styles.clubHighlight}>
-            <LinearGradient
-                colors={['#DA020E', '#C70000']}
-                style={styles.clubHighlightGradient}
-            >
-                <View style={styles.clubHighlightContent}>
-                    <Image
-                        source={{ uri: 'https://resources.premierleague.com/premierleague/badges/t1.png' }}
-                        style={styles.clubHighlightLogo}
-                    />
-                    <Text style={styles.clubHighlightName}>Manchester United</Text>
-                    <TouchableOpacity style={styles.clubHighlightButton}>
-                        <Text style={styles.clubHighlightButtonText}>Official site</Text>
-                        <Text style={styles.clubHighlightButtonIcon}>↗</Text>
-                    </TouchableOpacity>
-                </View>
-            </LinearGradient>
-        </View>
-    );
+    // return (
+    //     <View style={styles.clubHighlight}>
+    //         <LinearGradient
+    //             colors={['#DA020E', '#C70000']}
+    //             style={styles.clubHighlightGradient}
+    //         >
+    //             <View style={styles.clubHighlightContent}>
+    //                 <Image
+    //                     source={{ uri: 'https://resources.premierleague.com/premierleague/badges/t1.png' }}
+    //                     style={styles.clubHighlightLogo}
+    //                 />
+    //                 <Text style={styles.clubHighlightName}>Manchester United</Text>
+    //                 <TouchableOpacity style={styles.clubHighlightButton}>
+    //                     <Text style={styles.clubHighlightButtonText}>Official site</Text>
+    //                     <Text style={styles.clubHighlightButtonIcon}>↗</Text>
+    //                 </TouchableOpacity>
+    //             </View>
+    //         </LinearGradient>
+    //     </View>
+    // );
 };
 
 const RelatedNews = () => {
-    const newsItems = [
-        {
-            id: 1,
-            title: "Club News: What's changing things at Carrington",
-            logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
-        },
-        {
-            id: 2,
-            title: "Rashford: What's changing things at Carrington",
-            logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
-        },
-        {
-            id: 3,
-            title: "Club News: What's changing things at Carrington",
-            logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
-        }
-    ];
+    // const newsItems = [
+    //     {
+    //         id: 1,
+    //         title: "Club News: What's changing things at Carrington",
+    //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
+    //     },
+    //     {
+    //         id: 2,
+    //         title: "Rashford: What's changing things at Carrington",
+    //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
+    //     },
+    //     {
+    //         id: 3,
+    //         title: "Club News: What's changing things at Carrington",
+    //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
+    //     }
+    // ];
 
-    return (
-        <View style={styles.relatedNews}>
-            <Text style={styles.sectionTitle}>Related News</Text>
-            {newsItems.map((item) => (
-                <View key={item.id} style={styles.relatedNewsItem}>
-                    <Image
-                        source={{ uri: item.logo }}
-                        style={styles.relatedNewsLogo}
-                    />
-                    <Text style={styles.relatedNewsTitle}>{item.title}</Text>
-                </View>
-            ))}
-            <TouchableOpacity style={styles.moreButton}>
-                <Text style={styles.moreButtonText}>More News →</Text>
-            </TouchableOpacity>
-        </View>
-    );
+    // return (
+    //     <View style={styles.relatedNews}>
+    //         <Text style={styles.sectionTitle}>Related News</Text>
+    //         {newsItems.map((item) => (
+    //             <View key={item.id} style={styles.relatedNewsItem}>
+    //                 <Image
+    //                     source={{ uri: item.logo }}
+    //                     style={styles.relatedNewsLogo}
+    //                 />
+    //                 <Text style={styles.relatedNewsTitle}>{item.title}</Text>
+    //             </View>
+    //         ))}
+    //         <TouchableOpacity style={styles.moreButton}>
+    //             <Text style={styles.moreButtonText}>More News →</Text>
+    //         </TouchableOpacity>
+    //     </View>
+    // );
 };
 
 const LatestNews = () => {
-    const newsItems = [
-        {
-            id: 1,
-            title: "Live blog: Memorable updates: Dunk, Isak, Maddison out for 'weeks'",
-            image: "https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800"
-        },
-        {
-            id: 2,
-            title: "Live blog: Memorable updates: Dunk, Isak, Maddison out for 'weeks'",
-            image: "https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800"
-        },
-        {
-            id: 3,
-            title: "Live blog: Memorable updates: Dunk, Isak, Maddison out for 'weeks'",
-            image: "https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800"
+    const [newsItems, setNewsItems] = useState([]);
+
+    useEffect(() => {
+        fetchLatestNews();
+    }, []);
+
+    const fetchLatestNews = async () => {
+        try {
+            const result = await getNewsHighlight();
+            const sliced = result.slice(0, 3).map(article => ({
+                id: article.id,
+                title: article.headline,
+                image: article.images?.[0]?.url || '',
+                description: article.description || '',
+                content: article.content || '',
+                url: article.links?.web?.href || '',
+                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            }));
+            setNewsItems(sliced);
+        } catch (err) {
+            console.error('❌ Failed to fetch latest news:', err);
         }
-    ];
+    };
 
     return (
         <View style={styles.latestNews}>
             <Text style={styles.sectionTitle}>Latest News</Text>
             {newsItems.map((item) => (
-                <View key={item.id} style={styles.latestNewsItem}>
+                <TouchableOpacity
+                    key={item.id}
+                    style={styles.latestNewsItem}
+                    onPress={() => {
+                        router.push({
+                            pathname: "/newsDetail",
+                            params: {
+                                id: item.id,
+                                title: item.title,
+                                image: item.image,
+                                description: item.description,
+                                content: item.content,
+                                url: item.url,
+                                publishedDate: item.publishedDate
+                            }
+                        });
+                    }}
+                >
                     <Image
                         source={{ uri: item.image }}
                         style={styles.latestNewsImage}
                     />
                     <Text style={styles.latestNewsTitle}>{item.title}</Text>
-                </View>
+                </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.moreButton}>
-                <Text style={styles.moreButtonText}>More News →</Text>
+            <TouchableOpacity
+                style={styles.moreButton}
+                onPress={() => router.push("/News")}
+            >
+                <Text style={styles.moreButtonText}>More News</Text>
             </TouchableOpacity>
         </View>
     );
 };
 
 const LatestVideos = () => {
-    const videoItems = [
-        {
-            id: 1,
-            title: "Live blog: Memorable updates: Dunk, Isak, Maddison out for 'weeks'",
-            image: "https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800"
-        },
-        {
-            id: 2,
-            title: "Live blog: Memorable updates: Dunk, Isak, Maddison out for 'weeks'",
-            image: "https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800"
-        },
-        {
-            id: 3,
-            title: "Live blog: Memorable updates: Dunk, Isak, Maddison out for 'weeks'",
-            image: "https://resources.premierleague.pulselive.com/photo-resources/2024/09/13/afa04f3e-dc38-486b-bd5e-130a53392e45/PL2425-SQUAD-LISTS-2.png?width=1400&height=800"
+    const [videos, setVideos] = useState([]);
+
+    useEffect(() => {
+        fetchVideos();
+    }, []);
+
+    const fetchVideos = async () => {
+        try {
+            const result = await getVideosAPI();
+            if (Array.isArray(result)) {
+                setVideos(result.slice(0, 3));
+            }
+        } catch (err) {
+            console.error("❌ Error fetching videos:", err);
         }
-    ];
+    };
 
     return (
         <View style={styles.latestVideos}>
             <Text style={styles.sectionTitle}>Latest Videos</Text>
-            {videoItems.map((item) => (
-                <View key={item.id} style={styles.latestVideoItem}>
+
+            {videos.map((video, index) => (
+                <TouchableOpacity
+                    key={index}
+                    style={styles.latestVideoItem}
+                    onPress={() => {
+                        router.push({
+                            pathname: "/videoDetail",
+                            params: {
+                                url: video.url,
+                                title: video.title,
+                                thumbnail: video.thumbnail
+                            }
+                        });
+                    }}
+                >
                     <Image
-                        source={{ uri: item.image }}
+                        source={{ uri: video.thumbnail }}
                         style={styles.latestVideoImage}
                     />
-                    <Text style={styles.latestVideoTitle}>{item.title}</Text>
-                </View>
+                    <Text style={styles.latestVideoTitle}>{video.title}</Text>
+                </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.moreButton}>
-                <Text style={styles.moreButtonText}>More Videos →</Text>
+
+            <TouchableOpacity
+                style={styles.moreButton}
+                onPress={() => router.push("/Videos")}
+            >
+                <Text style={styles.moreButtonText}>More Videos</Text>
             </TouchableOpacity>
         </View>
     );
 };
-
-// const BottomNavigation = () => {
-//     return (
-//         <View style={styles.bottomNav}>
-//             <TouchableOpacity style={styles.navItem}>
-//                 <Image
-//                     source={{ uri: 'https://img.icons8.com/ios-filled/50/ffffff/news.png' }}
-//                     style={styles.navIcon}
-//                 />
-//                 <Text style={[styles.navText, styles.activeNavText]}>Latest</Text>
-//             </TouchableOpacity>
-//             <TouchableOpacity style={styles.navItem}>
-//                 <Image
-//                     source={{ uri: 'https://img.icons8.com/ios-filled/50/999999/football2.png' }}
-//                     style={styles.navIcon}
-//                 />
-//                 <Text style={styles.navText}>Matches</Text>
-//             </TouchableOpacity>
-//             <TouchableOpacity style={styles.navItem}>
-//                 <Image
-//                     source={{ uri: 'https://img.icons8.com/ios-filled/50/999999/bar-chart.png' }}
-//                     style={styles.navIcon}
-//                 />
-//                 <Text style={styles.navText}>Tables</Text>
-//             </TouchableOpacity>
-//             <TouchableOpacity style={styles.navItem}>
-//                 <Image
-//                     source={{ uri: 'https://img.icons8.com/ios-filled/50/999999/fantasy.png' }}
-//                     style={styles.navIcon}
-//                 />
-//                 <Text style={styles.navText}>Fantasy</Text>
-//             </TouchableOpacity>
-//             <TouchableOpacity style={styles.navItem}>
-//                 <Image
-//                     source={{ uri: 'https://img.icons8.com/ios-filled/50/999999/menu-2.png' }}
-//                     style={styles.navIcon}
-//                 />
-//                 <Text style={styles.navText}>More</Text>
-//             </TouchableOpacity>
-//         </View>
-//     );
-// };
 
 const styles = StyleSheet.create({
     container: {
@@ -496,159 +748,160 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
     },
-    header: {
+    headerContainer: {
         paddingTop: Platform.OS === 'android' ? 20 : 0,
         paddingBottom: 15,
-        paddingHorizontal: 20,
     },
     headerContent: {
-        alignItems: 'center',
+        paddingHorizontal: 15,
     },
-    premierLogo: {
-        width: 40,
-        height: 40,
-        marginBottom: 5,
-    },
-    matchdayTitle: {
+    headerTitle: {
         color: 'white',
-        fontSize: 24,
+        fontSize: 32,
         fontWeight: 'bold',
+        textAlign: 'center',
         marginBottom: 5,
     },
-    dateText: {
+    headerDate: {
         color: 'white',
         fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 15,
+        opacity: 0.9,
     },
-    matchCardsContainer: {
-        backgroundColor: '#e5006d',
-        paddingBottom: 10,
+    matchesContainer: {
+        marginTop: 10,
     },
     matchCard: {
         backgroundColor: 'white',
-        margin: 10,
-        marginBottom: 5,
         borderRadius: 10,
-        padding: 15,
-    },
-    matchContent: {
+        padding: 12,
+        marginBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
-    teamContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    matchTeamContainer: {
         flex: 2,
-    },
-    teamLogo: {
-        width: 25,
-        height: 25,
-    },
-    teamName: {
-        fontSize: 14,
-        marginHorizontal: 10,
-    },
-    scoreContainer: {
-        flex: 1,
         alignItems: 'center',
     },
-    scoreText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    matchdayBanner: {
-        backgroundColor: '#e5006d',
-        padding: 15,
-        marginHorizontal: 10,
-        marginBottom: 10,
-        borderRadius: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    matchdayBannerText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    arrowText: {
-        color: 'white',
-        fontSize: 18,
-    },
-    newsHighlight: {
-        margin: 10,
-        marginTop: 0,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        overflow: 'hidden',
-    },
-    newsHighlightImage: {
-        width: '100%',
-        height: 200,
-    },
-    newsHighlightOverlay: {
-        padding: 15,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-    },
-    newsHighlightTitle: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    newsHighlightSubtitle: {
-        color: '#ccc',
-        fontSize: 14,
-    },
-    newsHighlightGallery: {
-        flexDirection: 'row',
-        padding: 10,
-    },
-    newsHighlightGalleryImage: {
-        width: '48%',
-        height: 80,
-        marginRight: '4%',
-        borderRadius: 5,
-    },
-    newsHighlightButtons: {
-        flexDirection: 'row',
-        padding: 10,
-        paddingTop: 0,
-    },
-    newsHighlightButton: {
-        backgroundColor: '#f2f2f2',
-        padding: 10,
-        borderRadius: 5,
-        marginRight: 10,
-    },
-    newsHighlightButtonText: {
-        fontSize: 12,
-    },
-    newsHighlightInfo: {
-        padding: 10,
-    },
-    newsHighlightInfoItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    newsHighlightInfoIcon: {
+    matchTeamLogo: {
         width: 30,
         height: 30,
-        backgroundColor: '#37003c',
-        borderRadius: 5,
+        marginBottom: 4,
+    },
+    matchTeamName: {
+        color: '#333',
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
+        width: '100%',
+    },
+    matchScoreContainer: {
+        flex: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 10,
+        paddingHorizontal: 8,
     },
-    newsHighlightInfoIconText: {
+    matchScore: {
+        color: '#333',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    matchTime: {
+        color: '#333',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    matchStatus: {
+        color: '#666',
+        fontSize: 11,
+        marginTop: 2,
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    loadingText: {
         color: 'white',
+        marginTop: 10,
+    },
+    noMatchesContainer: {
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    noMatchesText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    newsHighlightContainer: {
+        backgroundColor: '#37003C',
+        paddingVertical: 20,
+    },
+    newsHeader: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    newsLogo: {
+        width: 200,
+        height: 50,
+    },
+    newsCard: {
+        marginHorizontal: 15,
+        marginBottom: 20,
+        borderRadius: 15,
+        overflow: 'hidden',
+        backgroundColor: '#2C0031',
+        elevation: 5,
+    },
+    newsImageContainer: {
+        width: '100%',
+        height: 200,
+        borderRadius: 15,
+        overflow: 'hidden',
+    },
+    newsImage: {
+        width: '100%',
+        height: '100%',
+    },
+    newsTag: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        backgroundColor: '#00ff85',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+    },
+    newsTagText: {
+        color: '#37003C',
         fontWeight: 'bold',
         fontSize: 12,
     },
-    newsHighlightInfoText: {
+    newsContent: {
+        padding: 15,
+    },
+    newsTitle: {
+        color: '#ffffff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    newsDescription: {
+        color: '#ffffff99',
         fontSize: 14,
-        flex: 1,
+        marginBottom: 8,
+        lineHeight: 20,
+    },
+    newsDate: {
+        color: '#ffffff80',
+        fontSize: 12,
     },
     tabSelector: {
         flexDirection: 'row',
@@ -677,188 +930,153 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         overflow: 'hidden',
     },
-    matchweekHeader: {
-        backgroundColor: '#00b2ff',
+    matchTabContainer: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
         padding: 15,
     },
-    matchweekTitle: {
-        color: 'white',
-        fontSize: 18,
+    matchDateGroup: {
+        marginBottom: 20,
+    },
+    matchDateText: {
+        fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center',
+        color: '#333',
+        marginBottom: 10,
     },
-    matchweekSubheader: {
-        padding: 10,
-        backgroundColor: '#f2f2f2',
-    },
-    matchweekSubheaderText: {
-        fontSize: 12,
-        color: '#666',
-        textAlign: 'center',
-    },
-    matchweekDateHeader: {
-        padding: 10,
-        backgroundColor: '#f8f8f8',
-    },
-    matchweekDateText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    matchweekMatch: {
+    matchCard: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
+        justifyContent: 'space-between',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
-    matchweekTeamContainer: {
-        width: 40,
+    matchTeamContainer: {
+        flex: 2,
         alignItems: 'center',
     },
-    matchweekTeamLogo: {
-        width: 25,
-        height: 25,
-    },
-    matchweekTimeContainer: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    matchweekTimeText: {
-        fontWeight: 'bold',
-    },
-    matchweekArrow: {
+    matchTeamLogo: {
         width: 30,
+        height: 30,
+        marginBottom: 4,
+    },
+    matchTeamName: {
+        color: '#333',
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
+        width: '100%',
+    },
+    matchScoreContainer: {
+        flex: 1.5,
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 8,
     },
-    matchweekArrowText: {
-        fontSize: 16,
-    },
-    viewAllFixtures: {
-        padding: 15,
-        alignItems: 'center',
-    },
-    viewAllFixturesText: {
-        color: '#00b2ff',
+    matchScore: {
+        color: '#333',
+        fontSize: 18,
         fontWeight: 'bold',
+    },
+    matchTime: {
+        color: '#333',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    matchStatus: {
+        color: '#666',
+        fontSize: 11,
+        marginTop: 2,
+    },
+    leagueTableContainer: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
     },
     leagueTableHeader: {
         flexDirection: 'row',
-        padding: 10,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: 'white',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
     },
-    leagueTableHeaderCell: {
-        width: 40,
-        alignItems: 'center',
-    },
-    leagueTableTeamCell: {
-        flex: 1,
-        alignItems: 'flex-start',
-    },
-    leagueTableHeaderText: {
-        fontWeight: 'bold',
+    headerText: {
+        color: '#333',
         fontSize: 12,
-        color: '#666',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     leagueTableRow: {
         flexDirection: 'row',
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
-        alignItems: 'center',
-    },
-    leagueTableCell: {
-        width: 40,
-        alignItems: 'center',
-    },
-    leagueTablePositionText: {
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    leagueTableTeamLogo: {
-        width: 20,
-        height: 20,
-        marginRight: 10,
-    },
-    leagueTableTeamText: {
-        fontSize: 14,
-    },
-    leagueTableText: {
-        fontSize: 14,
-    },
-    clubHighlight: {
-        margin: 10,
-        borderRadius: 10,
-        overflow: 'hidden',
-    },
-    clubHighlightGradient: {
-        padding: 20,
-    },
-    clubHighlightContent: {
-        alignItems: 'center',
-    },
-    clubHighlightLogo: {
-        width: 60,
-        height: 60,
-        marginBottom: 10,
-    },
-    clubHighlightName: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    clubHighlightButton: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 5,
-    },
-    clubHighlightButtonText: {
-        color: 'white',
-        marginRight: 5,
-    },
-    clubHighlightButtonIcon: {
-        color: 'white',
-    },
-    relatedNews: {
-        margin: 10,
         backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 15,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 15,
+    positionCell: {
+        width: 40,
+        justifyContent: 'center',
     },
-    relatedNewsItem: {
+    teamCell: {
+        flex: 3,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
+        paddingRight: 10,
     },
-    relatedNewsLogo: {
-        width: 30,
-        height: 30,
-        marginRight: 10,
+    statsCell: {
+        width: 40,
+        justifyContent: 'center',
     },
-    relatedNewsTitle: {
-        flex: 1,
+    pointsCell: {
+        width: 45,
+        justifyContent: 'center',
+    },
+    teamLogo: {
+        width: 25,
+        height: 25,
+        marginRight: 8,
+    },
+    positionText: {
+        color: '#333',
         fontSize: 14,
-    },
-    moreButton: {
-        alignItems: 'center',
-        marginTop: 5,
-    },
-    moreButtonText: {
-        color: '#00b2ff',
         fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    teamText: {
+        color: '#333',
+        fontSize: 14,
+        flex: 1,
+    },
+    statsText: {
+        color: '#333',
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    pointsText: {
+        color: '#333',
+        fontSize: 14,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    championsLeague: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#00ff85',
+    },
+    europaLeague: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF7F00',
+    },
+    relegation: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF4444',
     },
     latestNews: {
         margin: 10,
@@ -909,35 +1127,23 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
     },
-    // bottomNav: {
-    //     flexDirection: 'row',
-    //     backgroundColor: '#fff',
-    //     paddingVertical: 10,
-    //     borderTopWidth: 1,
-    //     borderTopColor: '#e0e0e0',
-    //     position: 'absolute',
-    //     bottom: 0,
-    //     left: 0,
-    //     right: 0,
-    // },
-    // navItem: {
-    //     flex: 1,
-    //     alignItems: 'center',
-    //     justifyContent: 'center',
-    // },
-    // navIcon: {
-    //     width: 24,
-    //     height: 24,
-    //     marginBottom: 5,
-    //     tintColor: '#999',
-    // },
-    // navText: {
-    //     color: '#999',
-    //     fontSize: 12,
-    // },
-    // activeNavText: {
-    //     color: '#37003c',
-    // },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 15,
+    },
+    moreButton: {
+        alignItems: 'center',
+        marginTop: 5,
+    },
+    moreButtonText: {
+        color: '#00b2ff',
+        fontWeight: 'bold',
+    },
+    liveMatchStatus: {
+        color: '#ff0000',
+        fontWeight: 'bold'
+    },
 });
 
 export default App;
