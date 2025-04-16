@@ -6,7 +6,7 @@ import axios from "axios";
 import { Link } from "expo-router";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from "expo-router";
-
+import { router } from "expo-router";
 // require('dotenv').config();
 
 const TeamScreen = () => {
@@ -28,7 +28,8 @@ const TeamScreen = () => {
             const allFetchedTeams = response.data.teams;
             // Tìm team theo teamName1
             console.log("Tìm kiếm đội bóng:", teamName1);
-        const foundTeam = allFetchedTeams.find(t => t.shortName === teamName1);
+        const foundTeam = allFetchedTeams.find(t => teamName1.toLowerCase().includes(t.shortName.toLowerCase()) ||
+        t.name.toLowerCase().includes(teamName1.toLowerCase()));
 console.log("Found team:", foundTeam.id);
 setTeamId(foundTeam.id); // Lưu teamId vào state
         } catch (error) {
@@ -663,29 +664,34 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
     };
 
     return (
-      (  !team && !teamName1) ? (<Text>Loading...</Text>) : (
+       ( !team&& !teamName && !teamName1 && !team) ? (<Text>Loading...</Text>) : (
             // <SafeAreaView style={{ flex: 1, backgroundColor: "#f2f2f2" }}>
+<View style={{ flex: 1, backgroundColor: "#fff" }}>
+<TouchableOpacity
+                                                          onPress={() => router.back()}
+                                      
 
-            <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
-                {/* Ảnh nền */}
-                <View style={{ position: "relative",height: 200 }}>
-                    <Image
-                        source={{ uri: "https://via.placeholder.com/500" }}
-                        style={{ width: "100%", height: 200, backgroundColor: teamColors.toLowerCase() }}
-                    />
-                    <TouchableOpacity
                         style={{
                             position: "absolute",
                             top: 40,
-                            left: 20,
+                            left: 20,zIndex: 10,
                             backgroundColor: "rgba(0,0,0,0.5)",
                             padding: 10,
                             borderRadius: 20,
+                            height: 40,
                         }}
                     >
-                        <Ionicons name="arrow-back" size={24} color="white" />
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                </View>
+            <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
+                {/* Ảnh nền */}
+                {/* <View style={{ position: "relative" ,height: 20}}> */}
+                    {/* <Image
+                        source={{ uri: "https://via.placeholder.com/500" }}
+                        style={{ width: "100%", height: 200, backgroundColor: teamColors.toLowerCase() }}
+                    /> */}
+                    
+                {/* </View> */}
 
                 {/* Thông tin đội bóng */}
                 <View style={{ backgroundColor: "#c8102e", padding: 20 }}>
@@ -781,6 +787,7 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
 
 
             </ScrollView>
+</View>
             //  </SafeAreaView>
             )
     );
