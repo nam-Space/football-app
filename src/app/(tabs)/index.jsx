@@ -83,7 +83,7 @@ const Header = () => {
 
     const formatMatchTime = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleTimeString('vi-VN', {
+        return date.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit'
         });
@@ -91,9 +91,9 @@ const Header = () => {
 
     const formatDate = () => {
         const date = new Date();
-        return date.toLocaleDateString('vi-VN', {
-        weekday: 'long',
-        day: 'numeric',
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            day: 'numeric',
             month: 'long'
         });
     };
@@ -192,7 +192,7 @@ const NewsHighlight = () => {
                 description: article.description,
                 image: article.images?.[0]?.url,
                 url: article.links?.web?.href,
-                publishedDate: new Date(article.published).toLocaleDateString('vi-VN', {
+                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -280,7 +280,7 @@ const TabSelector = ({ activeTab, setActiveTab }) => {
 };
 
 const MatchesTab = () => {
-    const [matches, setMatches] = useState([]);
+    const [matches, setMatches] = useState({}); // Khởi tạo là object rỗng thay vì mảng rỗng
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -288,21 +288,91 @@ const MatchesTab = () => {
         fetchMatches();
     }, []);
 
-        const fetchMatches = async () => {
-            try {
-            const data = await getMatchesFromESPN();
-            if (data && data.events) {
-                setMatches(data.events);
+    const fetchMatches = async () => {
+        try {
+            const today = new Date();
+            const nextMonth = new Date();
+            nextMonth.setMonth(today.getMonth() + 1);
+            
+            const dateFrom = today.toISOString().split('T')[0];
+            const dateTo = nextMonth.toISOString().split('T')[0];
+            
+            console.log('Date range:', { dateFrom, dateTo }); // Debug log
+            
+            const res = await getMatchesAPI(`competitions/PL/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`);
+            
+            if (res && res.data && res.data.matches) {
+                const allMatches = res.data.matches;
+                console.log('All matches:', allMatches); // Debug log
+                
+                // Sắp xếp theo thời gian tăng dần
+                const sortedMatches = allMatches.sort((a, b) => 
+                    new Date(a.utcDate) - new Date(b.utcDate)
+                );
+                
+                // Lấy 10 trận sắp tới
+                const next10Matches = sortedMatches.slice(0, 10);
+                console.log('Next 10 matches:', next10Matches); // Debug log
+                
+                const groupedMatches = groupMatchesByDate(next10Matches);
+                console.log('Grouped matches:', groupedMatches); // Debug log
+                
+                setMatches(groupedMatches);
             } else {
-                setError('Không có dữ liệu trận đấu');
+                console.log('No matches found in Premier League'); // Debug log
+                setError('Không có trận đấu nào sắp diễn ra');
             }
-                setLoading(false);
-            } catch (err) {
+            setLoading(false);
+        } catch (err) {
             console.error('Lỗi khi tải dữ liệu trận đấu:', err);
             setError('Không thể tải lịch thi đấu');
-                setLoading(false);
+            setLoading(false);
+        }
+    };
+
+    const groupMatchesByDate = (matches) => {
+        if (!Array.isArray(matches)) {
+            console.log('Invalid matches data:', matches); // Debug log
+            return {};
+        }
+        
+        return matches.reduce((groups, match) => {
+            if (!match || !match.utcDate) {
+                console.log('Invalid match data:', match); // Debug log
+                return groups;
             }
-        };
+            
+            const date = new Date(match.utcDate).toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            });
+
+            if (!groups[date]) {
+                groups[date] = [];
+            }
+            groups[date].push(match);
+            return groups;
+        }, {});
+    };
+
+    const formatTime = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const getScoreDisplay = (match) => {
+        if (!match) return '';
+        if (match.status === "FINISHED") {
+            return `${match.score.fullTime.home} - ${match.score.fullTime.away}`;
+        } else {
+            return formatTime(match.utcDate);
+        }
+    };
 
     if (loading) {
         return (
@@ -320,74 +390,56 @@ const MatchesTab = () => {
         );
     }
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long'
-        });
-    };
-
-    const formatTime = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const groupedMatches = matches.reduce((groups, match) => {
-        const date = formatDate(match.date);
-        if (!groups[date]) {
-            groups[date] = [];
-        }
-        groups[date].push(match);
-        return groups;
-    }, {});
-
     return (
         <View style={styles.matchTabContainer}>
-            {Object.entries(groupedMatches).map(([date, dateMatches]) => (
-                <View key={date} style={styles.matchDateGroup}>
-                    <Text style={styles.matchDateText}>{date}</Text>
-                    {dateMatches.map((match) => {
-                        const homeTeam = match.competitions[0].competitors.find(c => c.homeAway === 'home');
-                        const awayTeam = match.competitions[0].competitors.find(c => c.homeAway === 'away');
-                        const status = match.status.type.shortDetail;
-                        const time = formatTime(match.date);
-
-                        return (
-                            <View key={match.id} style={styles.matchCard}>
+            {Object.entries(matches).length > 0 ? (
+                Object.entries(matches).map(([date, dayMatches]) => (
+                    <View key={date} style={styles.matchDateGroup}>
+                        <Text style={styles.matchDateText}>{date}</Text>
+                        {Array.isArray(dayMatches) && dayMatches.map((match) => (
+                            <TouchableOpacity
+                                key={match.id}
+                                style={styles.matchCard}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/(main)/matchDetail",
+                                        params: {
+                                            homeTeamId: match.homeTeam.id,
+                                            awayTeamId: match.awayTeam.id,
+                                            matchDate: match.utcDate.split('T')[0],
+                                        },
+                                    })
+                                }
+                            >
                                 <View style={styles.matchTeamContainer}>
-                        <Image
-                                        source={{ uri: homeTeam.team.logo }}
+                                    <Image
+                                        source={{ uri: match.homeTeam.crest }}
                                         style={styles.matchTeamLogo}
-                        />
-                                    <Text style={styles.matchTeamName}>{homeTeam.team.name}</Text>
-                    </View>
+                                    />
+                                    <Text style={styles.matchTeamName}>{match.homeTeam.shortName}</Text>
+                                </View>
 
                                 <View style={styles.matchScoreContainer}>
-                                    {status === 'FT' ? (
-                                        <Text style={styles.matchScore}>{homeTeam.score} - {awayTeam.score}</Text>
-                                    ) : (
-                                        <Text style={styles.matchTime}>{time}</Text>
-                                    )}
-                                    <Text style={styles.matchStatus}>{status}</Text>
-                    </View>
+                                    <Text style={styles.matchScore}>{getScoreDisplay(match)}</Text>
+                                    <Text style={styles.matchStatus}>{match.status}</Text>
+                                </View>
 
                                 <View style={styles.matchTeamContainer}>
-                        <Image
-                                        source={{ uri: awayTeam.team.logo }}
+                                    <Image
+                                        source={{ uri: match.awayTeam.crest }}
                                         style={styles.matchTeamLogo}
-                        />
-                                    <Text style={styles.matchTeamName}>{awayTeam.team.name}</Text>
+                                    />
+                                    <Text style={styles.matchTeamName}>{match.awayTeam.shortName}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                            </View>
-                        );
-                    })}
+                ))
+            ) : (
+                <View style={styles.noMatchesContainer}>
+                    <Text style={styles.noMatchesText}>Không có trận đấu nào sắp diễn ra</Text>
                 </View>
-            ))}
+            )}
         </View>
     );
 };
@@ -561,7 +613,7 @@ const LatestNews = () => {
                 description: article.description || '',
                 content: article.content || '',
                 url: article.links?.web?.href || '',
-                publishedDate: new Date(article.published).toLocaleDateString('vi-VN', {
+                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
