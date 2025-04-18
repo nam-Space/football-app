@@ -225,7 +225,7 @@ const NewsHighlight = () => {
                     style={styles.newsCard}
                     onPress={() => {
                         router.push({
-                            pathname: "/newsDetail",
+                            pathname: "/homeNewsDetail",
                             params: {
                                 id: article.id,
                                 title: article.title,
@@ -636,7 +636,7 @@ const LatestNews = () => {
                     style={styles.latestNewsItem}
                     onPress={() => {
                         router.push({
-                            pathname: "/newsDetail",
+                            pathname: "/homeNewsDetail",
                             params: {
                                 id: item.id,
                                 title: item.title,
