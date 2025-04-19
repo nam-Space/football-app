@@ -3,16 +3,22 @@ import { View, Text, Image, TouchableOpacity, ScrollView, Linking } from "react-
 import { Button } from "react-native-paper";
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
+import { useApp } from "@/context/AppContext";
 import { Link } from "expo-router";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from "expo-router";
 import { router } from "expo-router";
 // require('dotenv').config();
+import {
+    updateUserFavouriteTeam
+} from "@/utils/api";
 
 const TeamScreen = () => {
+    const { user ,setUser} = useApp();
     const { teamName1 } = useLocalSearchParams(); // <-- Nhận từ router
     const [activeTab, setActiveTab] = useState("overview"); // Thêm state quản lý tab
     const [team, setTeam] = useState(null);
+    const [isFavourited, setIsFavourited ] = useState(false);
     const [teamId, setTeamId] = useState(null);
     const [allTeams, setAllTeams] = useState(null);
     const [teamStats, setTeamStats] = useState(null);
@@ -92,9 +98,11 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
         }
     };
     useEffect(() => {
+
         fetchAllTeams();
     }, [teamName1]);
     useEffect(() => {
+        if (teamId && teamId == user?.team?.id) setIsFavourited(true); // Không gọi API nếu teamId chưa có
         fetchTeam();
     }, [teamId]);
     useEffect(() => {
@@ -717,13 +725,53 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
                     }}
                 >
                     <Button
-                        icon="star-outline"
-                        mode="outlined"
-                        textColor="#c8102e"
-                        style={{ borderColor: "#c8102e" }}
-                    >
-                        Favourite
-                    </Button>
+  icon={isFavourited ? "star" : "star-outline"}
+  mode={isFavourited ? "contained" : "outlined"}
+  textColor={isFavourited ? "white" : "#c8102e"}
+  style={{
+    borderColor: "#c8102e",
+    backgroundColor: isFavourited ? "#c8102e" : "transparent",
+  }}
+  onPress={async () => {
+    setIsFavourited(!isFavourited)
+
+    if(!isFavourited) {
+        const data = {
+            id: team.id,
+            name: team.name,
+            shortName: team.shortName,
+            address: team.address,
+            crest: team.crest,
+            tla: team.tla,
+            venue: team.venue,
+            website: team.website,
+          };
+          console.log("data team update", data)
+          const res  = await updateUserFavouriteTeam(data);
+          setUser(res.data.data)
+    } else{
+        const data = {
+            id: "",
+            name: "",
+            shortName: "",
+            address: "",
+            crest: "",
+            tla: "",
+            venue: "",
+            website: "",
+          };
+          console.log("data team update", data)
+          const res  = await updateUserFavouriteTeam(data);
+          setUser(res.data.data)
+
+    }
+    
+    
+}
+    }
+>
+  Favourite
+</Button>
                     <Button
                         icon="bell-outline"
                         mode="outlined"

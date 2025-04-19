@@ -84,7 +84,7 @@ function RootLayout() {
                             headerTintColor: "white",
                         }}
                     />
-                    <Stack.Screen
+                    {/* <Stack.Screen
                         name="(tab)/club"
                         options={{
                             headerShown: false,
@@ -92,7 +92,7 @@ function RootLayout() {
                             headerStyle: { backgroundColor: theme.colors.primary },
                             headerTintColor: "white",
                         }}
-                    />
+                    /> */}
                     <Stack.Screen
                         name="(main)/newsDetail"
                         options={{
