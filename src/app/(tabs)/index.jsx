@@ -27,6 +27,7 @@ import {
     Linking
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const App = () => {
     const [activeTab, setActiveTab] = useState('matches');
@@ -73,6 +74,7 @@ const Header = () => {
             const data = await getMatchesFromESPN();
             if (data && data.events) {
                 setMatches(data.events.slice(0, 5));
+                console.log('Matches data:', data.events.slice(0, 5)); // Debug log
             }
             setLoading(false);
         } catch (err) {
@@ -104,7 +106,7 @@ const Header = () => {
 
         // Hiển thị tỉ số cho trận đã kết thúc hoặc đang diễn ra
         if (status === 'FT' || status.includes("'") || status === 'HT') {
-    return (
+            return (
                 <Text style={styles.matchScore}>
                     {homeTeam.score} - {awayTeam.score}
                 </Text>
@@ -115,8 +117,8 @@ const Header = () => {
     };
 
     return (
-        <LinearGradient 
-            colors={['#ff0080', '#ff8000']} 
+        <LinearGradient
+            colors={['#ff0080', '#ff8000']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.headerContainer}
@@ -135,18 +137,24 @@ const Header = () => {
                         {matches.map((match) => {
                             const homeTeam = match.competitions[0].competitors.find(c => c.homeAway === 'home');
                             const awayTeam = match.competitions[0].competitors.find(c => c.homeAway === 'away');
+                            console.log(awayTeam)
+                            console.log("ten doi:" + awayTeam.team.displayName)
                             const status = match.status.type.shortDetail;
-                            
+
                             return (
                                 <View key={match.id} style={styles.matchCard}>
-                                    <View style={styles.matchTeamContainer}>
+                                    <TouchableOpacity style={styles.matchTeamContainer}
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: homeTeam.team.displayName } })}
+                                        // onPress={() => router.push(pathname:"/Club",  params: { teamName1: homeTeam.team.shortDisplayName } )}}
+                                    >
                                         <Image
                                             source={{ uri: homeTeam.team.logo }}
                                             style={styles.matchTeamLogo}
+
                                         />
                                         <Text style={styles.matchTeamName}>{homeTeam.team.name}</Text>
-            </View>
-                                    
+                                    </TouchableOpacity>
+
                                     <View style={styles.matchScoreContainer}>
                                         {getMatchScore(match, status)}
                                         <Text style={[
@@ -154,18 +162,21 @@ const Header = () => {
                                             (status.includes("'") || status === 'HT') && styles.liveMatchStatus
                                         ]}>{status}</Text>
                                     </View>
-                                    
-                                    <View style={styles.matchTeamContainer}>
+
+                                    <TouchableOpacity style={styles.matchTeamContainer}
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: awayTeam.team.displayName } })}
+                                        // onPress={() => router.push({ pathname: "/(tabs)/club", params: { teamName1: awayTeam.team.shortDisplayName } })}
+                                    >
                                         <Image
                                             source={{ uri: awayTeam.team.logo }}
                                             style={styles.matchTeamLogo}
                                         />
                                         <Text style={styles.matchTeamName}>{awayTeam.team.name}</Text>
-                </View>
-        </View>
-    );
+                                    </TouchableOpacity>
+                                </View>
+                            );
                         })}
-        </View>
+                    </View>
                 ) : (
                     <View style={styles.noMatchesContainer}>
                         <Text style={styles.noMatchesText}>Không có lịch thi đấu</Text>
@@ -212,16 +223,16 @@ const NewsHighlight = () => {
     return (
         <View style={styles.newsHighlightContainer}>
             <View style={styles.newsHeader}>
-                    <Image
-                        source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png' }}
+                <Image
+                    source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png' }}
                     style={styles.newsLogo}
-                        resizeMode="contain"
-                    />
-                </View>
+                    resizeMode="contain"
+                />
+            </View>
 
-                {newsList.map((article, index) => (
-                    <TouchableOpacity
-                        key={index}
+            {newsList.map((article, index) => (
+                <TouchableOpacity
+                    key={index}
                     style={styles.newsCard}
                     onPress={() => {
                         router.push({
@@ -253,9 +264,9 @@ const NewsHighlight = () => {
                             {article.description}
                         </Text>
                         <Text style={styles.newsDate}>{article.publishedDate}</Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                    </View>
+                </TouchableOpacity>
+            ))}
         </View>
     );
 };
@@ -293,30 +304,30 @@ const MatchesTab = () => {
             const today = new Date();
             const nextMonth = new Date();
             nextMonth.setMonth(today.getMonth() + 1);
-            
+
             const dateFrom = today.toISOString().split('T')[0];
             const dateTo = nextMonth.toISOString().split('T')[0];
-            
+
             console.log('Date range:', { dateFrom, dateTo }); // Debug log
-            
+
             const res = await getMatchesAPI(`competitions/PL/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`);
-            
+
             if (res && res.data && res.data.matches) {
                 const allMatches = res.data.matches;
                 console.log('All matches:', allMatches); // Debug log
-                
+
                 // Sắp xếp theo thời gian tăng dần
-                const sortedMatches = allMatches.sort((a, b) => 
+                const sortedMatches = allMatches.sort((a, b) =>
                     new Date(a.utcDate) - new Date(b.utcDate)
                 );
-                
+
                 // Lấy 10 trận sắp tới
                 const next10Matches = sortedMatches.slice(0, 10);
                 console.log('Next 10 matches:', next10Matches); // Debug log
-                
+
                 const groupedMatches = groupMatchesByDate(next10Matches);
                 console.log('Grouped matches:', groupedMatches); // Debug log
-                
+
                 setMatches(groupedMatches);
             } else {
                 console.log('No matches found in Premier League'); // Debug log
@@ -335,13 +346,13 @@ const MatchesTab = () => {
             console.log('Invalid matches data:', matches); // Debug log
             return {};
         }
-        
+
         return matches.reduce((groups, match) => {
             if (!match || !match.utcDate) {
                 console.log('Invalid match data:', match); // Debug log
                 return groups;
             }
-            
+
             const date = new Date(match.utcDate).toLocaleDateString("en-GB", {
                 weekday: "short",
                 day: "2-digit",
@@ -411,26 +422,31 @@ const MatchesTab = () => {
                                     })
                                 }
                             >
-                                <View style={styles.matchTeamContainer}>
+                                <TouchableOpacity 
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: match.homeTeam.shortName } })}
+                                
+                                style={styles.matchTeamContainer}>
                                     <Image
                                         source={{ uri: match.homeTeam.crest }}
                                         style={styles.matchTeamLogo}
                                     />
                                     <Text style={styles.matchTeamName}>{match.homeTeam.shortName}</Text>
-                                </View>
+                                </TouchableOpacity>
 
                                 <View style={styles.matchScoreContainer}>
                                     <Text style={styles.matchScore}>{getScoreDisplay(match)}</Text>
                                     <Text style={styles.matchStatus}>{match.status}</Text>
                                 </View>
 
-                                <View style={styles.matchTeamContainer}>
+                                <TouchableOpacity 
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: match.awayTeam.shortName } })}
+                                style={styles.matchTeamContainer}>
                                     <Image
                                         source={{ uri: match.awayTeam.crest }}
                                         style={styles.matchTeamLogo}
                                     />
                                     <Text style={styles.matchTeamName}>{match.awayTeam.shortName}</Text>
-                                </View>
+                                </TouchableOpacity>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -510,24 +526,27 @@ const LeagueTableTab = () => {
                         <View key={index} style={[styles.leagueTableRow, getPositionStyle(item.position)]}>
                             <View style={styles.positionCell}>
                                 <Text style={styles.positionText}>{item.position}</Text>
-                    </View>
-                            <View style={styles.teamCell}>
-                        <Image
+                            </View>
+                            <TouchableOpacity 
+                                        onPress={() => router.push({ pathname: "/Club", params: { teamName1: item.team } })}
+                            
+                            style={styles.teamCell}>
+                                <Image
                                     source={{ uri: item.teamLogo }}
                                     style={styles.teamLogo}
-                        />
+                                />
                                 <Text style={styles.teamText}>{item.team}</Text>
-                    </View>
+                            </TouchableOpacity>
                             <View style={styles.statsCell}>
                                 <Text style={styles.statsText}>{item.played}</Text>
-                    </View>
+                            </View>
                             <View style={styles.statsCell}>
                                 <Text style={styles.statsText}>{item.goalDifference}</Text>
-                    </View>
+                            </View>
                             <View style={styles.pointsCell}>
                                 <Text style={styles.pointsText}>{item.points}</Text>
-                    </View>
-                </View>
+                            </View>
+                        </View>
                     );
                 })}
             </ScrollView>
@@ -656,7 +675,7 @@ const LatestNews = () => {
                     <Text style={styles.latestNewsTitle}>{item.title}</Text>
                 </TouchableOpacity>
             ))}
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.moreButton}
                 onPress={() => router.push("/News")}
             >
@@ -711,7 +730,7 @@ const LatestVideos = () => {
                 </TouchableOpacity>
             ))}
 
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.moreButton}
                 onPress={() => router.push("/Videos")}
             >

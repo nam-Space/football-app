@@ -25,7 +25,7 @@ const RootPage = () => {
                     });
                     router.replace("/(tabs)"); // Điều hướng đến màn hình chính
                 } else {
-                    router.replace("/(tabs)/club"); // Nếu API lỗi, điều hướng tới trang Club
+                    router.replace("/(tabs)"); // Nếu API lỗi, điều hướng tới trang Club
                 }
             } catch (e) {
                 Toast.show({
@@ -36,7 +36,7 @@ const RootPage = () => {
                 });
 
                 // Nếu có lỗi, vẫn chuyển hướng tới trang Club
-                router.replace("/(tabs)/club");
+                router.replace("/(tabs)");
             } finally {
                 // Ẩn màn hình splash
                 await SplashScreen.hideAsync();
