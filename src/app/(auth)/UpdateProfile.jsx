@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Image,
   Modal,
   FlatList,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -39,70 +41,71 @@ const countries = [
 const UpdateProfile = () => {
   const router = useRouter();
   const { user, setUser } = useApp();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("");
-  const [country, setCountry] = useState("");
-  const [phoneCode, setPhoneCode] = useState("+84");
-  const [avatar, setAvatar] = useState(null);
-
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    gender: "",
+    country: "",
+    phoneCode: "+84",
+    avatar: null,
+  });
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [phoneCodeModalVisible, setPhoneCodeModalVisible] = useState(false);
-
-  const [isFirstNameValid, setIsFirstNameValid] = useState(false);
-  const [isLastNameValid, setIsLastNameValid] = useState(false);
-  const [isGenderValid, setIsGenderValid] = useState(false);
-  const [isCountryValid, setIsCountryValid] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
       const nameParts = user.name ? user.name.split(" ") : ["", ""];
       const fName = nameParts[0] || "";
       const lName = nameParts.slice(1).join(" ") || "";
+      const phoneData = user.phone
+        ? (() => {
+            const matchingCountry = countries.find((c) =>
+              user.phone.startsWith(c.phoneCode)
+            );
+            const code = matchingCountry?.phoneCode || "+84";
+            return {
+              phoneCode: code,
+              phone: user.phone.startsWith(code)
+                ? user.phone.slice(code.length)
+                : user.phone,
+            };
+          })()
+        : { phoneCode: "+84", phone: "" };
 
-      setFirstName(fName);
-      setLastName(lName);
-      setPhone(user.phone || "");
-      setGender(user.gender || "");
-      setCountry(user.address ? user.address.split(",")[0].trim() : "");
-      setIsFirstNameValid(!!fName);
-      setIsLastNameValid(!!lName);
-      setIsGenderValid(!!user.gender);
-      setIsCountryValid(!!user.address);
-      setPhoneCode(
-        countries.find((c) => c.name === user.address?.split(",")[0].trim())?.phoneCode || "+84"
-      );
-      setAvatar(user.avatar || null);
+      setForm({
+        firstName: fName,
+        lastName: lName,
+        phone: phoneData.phone,
+        gender: user.gender || "",
+        country: user.address ? user.address.split(",")[0].trim() : "",
+        phoneCode: phoneData.phoneCode,
+        avatar: user.avatar || null,
+      });
     }
   }, [user]);
 
-  useEffect(() => {
-    setIsFirstNameValid(firstName.trim().length > 0);
-  }, [firstName]);
-
-  useEffect(() => {
-    setIsLastNameValid(lastName.trim().length > 0);
-  }, [lastName]);
-
-  useEffect(() => {
-    setIsGenderValid(!!gender);
-  }, [gender]);
-
-  useEffect(() => {
-    setIsCountryValid(country.trim().length > 0);
-  }, [country]);
-
   const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Permission to access media library is required!",
+      });
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
+      quality: 0.5, // Giảm chất lượng xuống 0.5 để giảm kích thước file
     });
 
     if (!result.canceled) {
-      setAvatar(result.assets[0].uri);
+      setForm({ ...form, avatar: result.assets[0].uri });
       Toast.show({
         type: "success",
         text1: "Avatar Selected",
@@ -112,13 +115,12 @@ const UpdateProfile = () => {
   };
 
   const selectCountry = (selectedCountry) => {
-    setCountry(selectedCountry.name);
-    setPhoneCode(selectedCountry.phoneCode);
+    setForm({ ...form, country: selectedCountry.name, phoneCode: selectedCountry.phoneCode });
     setCountryModalVisible(false);
   };
 
   const selectPhoneCode = (selectedCountry) => {
-    setPhoneCode(selectedCountry.phoneCode);
+    setForm({ ...form, phoneCode: selectedCountry.phoneCode });
     setPhoneCodeModalVisible(false);
   };
 
@@ -132,6 +134,7 @@ const UpdateProfile = () => {
       return;
     }
 
+    const { firstName, lastName, gender, country } = form;
     if (!firstName.trim() || !lastName.trim() || !gender || !country.trim()) {
       Toast.show({
         type: "error",
@@ -141,43 +144,66 @@ const UpdateProfile = () => {
       return;
     }
 
+    setLoading(true);
     const formData = new FormData();
     formData.append("name", `${firstName.trim()} ${lastName.trim()}`.trim());
     formData.append("gender", gender);
-    formData.append("address", `${country.trim()}, NY`);
-    if (phone.trim()) {
-      formData.append("phone", `${phoneCode}${phone.trim()}`);
+    formData.append("address", country.trim());
+    if (form.phone.trim()) {
+      formData.append("phone", `${form.phoneCode}${form.phone.trim()}`);
     }
-    if (avatar && avatar !== user.avatar) {
-      const response = await fetch(avatar);
-      const blob = await response.blob();
-      formData.append("avatar", blob, "profile.jpg");
-    }
-
+    
+    if (form.avatar && form.avatar !== user.avatar) {
+      const uriParts = form.avatar.split(".");
+      const fileType = uriParts[uriParts.length - 1];
+    
+      formData.append("avatar", {
+        uri: form.avatar,
+        name: `avatar.${fileType}`,
+        type: `image/${fileType}`,
+      });
+    }    
+    
     try {
       const response = await updateUser(user._id, formData);
-
-      // Cập nhật user trong context với dữ liệu mới từ server
       setUser(response.data);
       Toast.show({
         type: "success",
         text1: "Success",
-        text2: response.message || "User updated successfully!", // Hiển thị message từ API
+        text2: response.message || "Profile updated successfully!",
       });
-
-      // Chuyển về trang home sau 1.5 giây
-      setTimeout(() => {
-        router.replace("/");
-      }, 3000);
     } catch (err) {
-      console.error("Update error:", err);
+      let errorMessage = "Failed to update profile.";
+      if (err.code === "ERR_NETWORK") {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (err.response) {
+        errorMessage = err.response.data.message || `Server error: ${err.response.status}`;
+      }
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: err.message || "Failed to update profile.",
+        text2: errorMessage,
       });
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="white" />
+          <Text style={styles.loadingText}>Updating profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const isFirstNameValid = form.firstName.trim().length > 0;
+  const isLastNameValid = form.lastName.trim().length > 0;
+  const isGenderValid = !!form.gender;
+  const isCountryValid = form.country.trim().length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -192,13 +218,13 @@ const UpdateProfile = () => {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
-          <Text style={styles.title}>Updating your profile</Text>
+          <Text style={styles.title}>Update Your Profile</Text>
 
           {/* Avatar Section */}
           <View style={styles.avatarSection}>
             <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
-              {avatar ? (
-                <Image source={{ uri: avatar }} style={styles.avatar} />
+              {form.avatar ? (
+                <Image source={{ uri: form.avatar }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Ionicons name="person" size={50} color="#3a0047" />
@@ -219,15 +245,15 @@ const UpdateProfile = () => {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                value={firstName}
-                onChangeText={setFirstName}
+                value={form.firstName}
+                onChangeText={(text) => setForm({ ...form, firstName: text })}
                 placeholder="Enter First Name"
               />
-              {isFirstNameValid ? (
+              {isFirstNameValid && (
                 <View style={styles.validIndicator}>
                   <Ionicons name="checkmark" size={20} color="white" />
                 </View>
-              ) : null}
+              )}
             </View>
           </View>
 
@@ -239,15 +265,15 @@ const UpdateProfile = () => {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                value={lastName}
-                onChangeText={setLastName}
+                value={form.lastName}
+                onChangeText={(text) => setForm({ ...form, lastName: text })}
                 placeholder="Enter Last Name"
               />
-              {isLastNameValid ? (
+              {isLastNameValid && (
                 <View style={styles.validIndicator}>
                   <Ionicons name="checkmark" size={20} color="white" />
                 </View>
-              ) : null}
+              )}
             </View>
           </View>
 
@@ -257,60 +283,52 @@ const UpdateProfile = () => {
               Gender <Text style={styles.required}>*Required</Text>
             </Text>
             <View style={styles.genderRow}>
-              <View style={styles.genderOption}>
-                <TouchableOpacity
-                  style={[styles.genderBox, gender === "Male" && styles.genderBoxSelected]}
-                  onPress={() => setGender("Male")}
-                >
-                  {gender === "Male" && <Ionicons name="checkmark" size={24} color="white" />}
-                </TouchableOpacity>
-                <Text style={styles.genderText}>Male</Text>
-              </View>
-              <View style={styles.genderOption}>
-                <TouchableOpacity
-                  style={[styles.genderBox, gender === "Female" && styles.genderBoxSelected]}
-                  onPress={() => setGender("Female")}
-                >
-                  {gender === "Female" && <Ionicons name="checkmark" size={24} color="white" />}
-                </TouchableOpacity>
-                <Text style={styles.genderText}>Female</Text>
-              </View>
-              <View style={styles.genderOption}>
-                <TouchableOpacity
-                  style={[styles.genderBox, gender === "Unspecified" && styles.genderBoxSelected]}
-                  onPress={() => setGender("Unspecified")}
-                >
-                  {gender === "Unspecified" && <Ionicons name="checkmark" size={24} color="white" />}
-                </TouchableOpacity>
-                <Text style={styles.genderText}>Unspecified</Text>
-              </View>
-              {isGenderValid ? (
+              {["Male", "Female", "Unspecified"].map((option) => (
+                <View key={option} style={styles.genderOption}>
+                  <TouchableOpacity
+                    style={[
+                      styles.genderBox,
+                      form.gender === option && styles.genderBoxSelected,
+                    ]}
+                    onPress={() => setForm({ ...form, gender: option })}
+                  >
+                    {form.gender === option && (
+                      <Ionicons name="checkmark" size={24} color="white" />
+                    )}
+                  </TouchableOpacity>
+                  <Text style={styles.genderText}>{option}</Text>
+                </View>
+              ))}
+              {isGenderValid && (
                 <View style={styles.validIndicator}>
                   <Ionicons name="checkmark" size={20} color="white" />
                 </View>
-              ) : null}
+              )}
             </View>
           </View>
 
           {/* Country/Region */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>
-              Country/Region of residence <Text style={styles.required}>*Required</Text>
+              Country/Region of Residence <Text style={styles.required}>*Required</Text>
             </Text>
-            <TouchableOpacity style={styles.inputContainer} onPress={() => setCountryModalVisible(true)}>
+            <TouchableOpacity
+              style={styles.inputContainer}
+              onPress={() => setCountryModalVisible(true)}
+            >
               <View style={styles.input}>
-                <Text style={country ? styles.inputText : styles.placeholderText}>
-                  {country || "Select Country"}
+                <Text style={form.country ? styles.inputText : styles.placeholderText}>
+                  {form.country || "Select Country"}
                 </Text>
                 <View style={styles.dropdownIcon}>
                   <Ionicons name="chevron-down" size={20} color="gray" />
                 </View>
               </View>
-              {isCountryValid ? (
+              {isCountryValid && (
                 <View style={styles.validIndicator}>
                   <Ionicons name="checkmark" size={20} color="white" />
                 </View>
-              ) : null}
+              )}
             </TouchableOpacity>
           </View>
 
@@ -322,13 +340,13 @@ const UpdateProfile = () => {
                 style={styles.countryCodeContainer}
                 onPress={() => setPhoneCodeModalVisible(true)}
               >
-                <Text style={styles.phoneCodeText}>{phoneCode}</Text>
+                <Text style={styles.phoneCodeText}>{form.phoneCode}</Text>
                 <Ionicons name="chevron-down" size={20} color="gray" />
               </TouchableOpacity>
               <TextInput
                 style={styles.phoneInput}
-                value={phone}
-                onChangeText={setPhone}
+                value={form.phone}
+                onChangeText={(text) => setForm({ ...form, phone: text })}
                 placeholder="Enter Phone Number"
                 keyboardType="phone-pad"
               />
@@ -336,7 +354,7 @@ const UpdateProfile = () => {
           </View>
 
           {/* Update Button */}
-          <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProfile}>
+          <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProfile} disabled={loading}>
             <Text style={styles.updateButtonText}>Update Personal Details</Text>
           </TouchableOpacity>
         </View>
@@ -361,9 +379,14 @@ const UpdateProfile = () => {
               data={countries}
               keyExtractor={(item) => item.code}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.modalItem} onPress={() => selectCountry(item)}>
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => selectCountry(item)}
+                >
                   <Text style={styles.modalItemText}>{item.name}</Text>
-                  {country === item.name && <Ionicons name="checkmark" size={20} color="#3a0047" />}
+                  {form.country === item.name && (
+                    <Ionicons name="checkmark" size={20} color="#3a0047" />
+                  )}
                 </TouchableOpacity>
               )}
             />
@@ -390,11 +413,16 @@ const UpdateProfile = () => {
               data={countries}
               keyExtractor={(item) => item.code}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.modalItem} onPress={() => selectPhoneCode(item)}>
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => selectPhoneCode(item)}
+                >
                   <Text style={styles.modalItemText}>
                     {item.name} ({item.phoneCode})
                   </Text>
-                  {phoneCode === item.phoneCode && <Ionicons name="checkmark" size={20} color="#3a0047" />}
+                  {form.phoneCode === item.phoneCode && (
+                    <Ionicons name="checkmark" size={20} color="#3a0047" />
+                  )}
                 </TouchableOpacity>
               )}
             />
@@ -437,6 +465,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#3a0047",
     marginBottom: 24,
+    textAlign: "center",
   },
   avatarSection: {
     alignItems: "center",
@@ -642,6 +671,17 @@ const styles = StyleSheet.create({
   modalItemText: {
     fontSize: 16,
     color: "#333",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#3a0047",
+  },
+  loadingText: {
+    color: "white",
+    fontSize: 18,
+    marginTop: 10,
   },
 });
 
