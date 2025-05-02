@@ -64,7 +64,11 @@ export const getUserAccountAPI = (data) => {
 
 export const updateUser = (id, data) => {
     const url = `/api/users/${id}`;
-    return axios.put(url, data);
+    return axios.put(url, data, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
 };
 
 export const updateUserFavouriteTeam = (data) => {
