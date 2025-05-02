@@ -35,7 +35,14 @@ export const registerUserAPI = (data) => axios.post(`/api/users/register`, { ...
 
 export const getUserAccountAPI = () => axios.get(`/api/users/account`);
 
-export const updateUser = (id, data) => axios.put(`/api/users/${id}`, data);
+export const updateUser = (id, data) => {
+    const url = `/api/users/${id}`;
+    return axios.put(url, data, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+};
 
 export const updateUserFavouriteTeam = (data) =>
     axios.post(`/api/users/update-favourite`, { ...data });
