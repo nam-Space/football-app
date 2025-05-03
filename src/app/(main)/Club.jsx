@@ -42,8 +42,10 @@ const TeamScreen = () => {
                     },
                 }
             );
+            // console.log(response.data.teams);
             const allFetchedTeams = response.data.teams;
             // Tìm team theo teamName1
+            // console.log("Tìm kiếm đội bóng:", teamName1);
             const foundTeam = allFetchedTeams.find(
                 (t) =>
                     teamName1
@@ -51,9 +53,10 @@ const TeamScreen = () => {
                         .includes(t.shortName.toLowerCase()) ||
                     t.name.toLowerCase().includes(teamName1.toLowerCase())
             );
+            // console.log("Found team:", foundTeam.id);
             setTeamId(foundTeam.id); // Lưu teamId vào state
         } catch (error) {
-            console.error("Lỗi gọi API:", error);
+            // console.error("Lỗi gọi API:", error);
         }
     };
     const fetchTeam = async () => {
@@ -68,13 +71,15 @@ const TeamScreen = () => {
                     },
                 }
             );
+            // console.log(response.data);
             setTeam(response.data);
             setTeamName(response.data.name);
             const colors = response.data.clubColors.split(" / "); // ["Red", "White"]
             setTeamColors(colors[0]); // Lấy màu đầu tiên
             setSquad(response.data.squad);
+            // console.log("Màu sắc đội bóng:", colors[0]);
         } catch (error) {
-            console.error("Lỗi gọi API:", error);
+            // console.error("Lỗi gọi API:", error);
         }
     };
     // Hàm chọn ngẫu nhiên 3 cầu thủ
@@ -114,13 +119,13 @@ const TeamScreen = () => {
                 );
                 if (clubData) {
                     setTeamStats(clubData);
-                    // console.log("Dữ liệu thống kê đội bóng:", clubData);
+                    // // console.log("Dữ liệu thống kê đội bóng:", clubData);
                 } else {
                     setError("Không tìm thấy câu lạc bộ");
                 }
             }
         } catch (error) {
-            console.error("Lỗi gọi API:", error);
+            // console.error("Lỗi gọi API:", error);
         }
     };
     useEffect(() => {
@@ -131,7 +136,8 @@ const TeamScreen = () => {
         fetchTeam();
     }, [teamId]);
     useEffect(() => {
-        // console.log("Dữ liệu team:", team.shortName);
+        // console.log("Dữ liệu team:", team);
+        // // console.log("Dữ liệu team:", team.shortName);
     }, [team]);
 
     useEffect(() => {
@@ -173,7 +179,7 @@ const TeamScreen = () => {
                     return "https://via.placeholder.com/80"; // Ảnh mặc định nếu không có dữ liệu
                 }
             } catch (error) {
-                // console.error("Lỗi tải ảnh cầu thủ:", error);
+                // // console.error("Lỗi tải ảnh cầu thủ:", error);
                 return "https://via.placeholder.com/80"; // Ảnh mặc định khi lỗi
             }
         };
@@ -1168,6 +1174,7 @@ const TeamScreen = () => {
                                     venue: team.venue,
                                     website: team.website,
                                 };
+                                // console.log("data team update", data)
                                 const res = await updateUserFavouriteTeam(data);
                                 setUser(res.data);
                             } else {
@@ -1181,6 +1188,7 @@ const TeamScreen = () => {
                                     venue: "",
                                     website: "",
                                 };
+                                // console.log("data team update", data)
                                 const res = await updateUserFavouriteTeam(data);
                                 setUser(res.data);
                             }
