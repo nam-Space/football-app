@@ -30,6 +30,7 @@ const TeamPickerModal = ({ visible, onClose }) => {
         // console.log("Selected team:", team);
         const { id, name, shortName, address, crest, tla, venue, website } =
             team;
+
         // Handle team selection here
         const res = await updateUserFavouriteTeam({
             id,
