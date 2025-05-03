@@ -30,30 +30,30 @@ const TeamScreen = () => {
     const fetchAllTeams = async () => {
         try {
             const response = await axios.get('http://api.football-data.org/v4/competitions/PL/teams', { headers: { "X-Auth-Token": "84f64d4adaf24a90a3b00a1ed06eaed4" } });
-            console.log(response.data.teams);
+            // console.log(response.data.teams);
             const allFetchedTeams = response.data.teams;
             // Tìm team theo teamName1
-            console.log("Tìm kiếm đội bóng:", teamName1);
+            // console.log("Tìm kiếm đội bóng:", teamName1);
         const foundTeam = allFetchedTeams.find(t => teamName1.toLowerCase().includes(t.shortName.toLowerCase()) ||
         t.name.toLowerCase().includes(teamName1.toLowerCase()));
-console.log("Found team:", foundTeam.id);
+// console.log("Found team:", foundTeam.id);
 setTeamId(foundTeam.id); // Lưu teamId vào state
         } catch (error) {
-            console.error("Lỗi gọi API:", error);
+            // console.error("Lỗi gọi API:", error);
         }
     };
     const fetchTeam = async () => {
         try {
             const response = await axios.get(`https://api.football-data.org/v4/teams/${teamId? teamId: 64}`, { headers: { "X-Auth-Token": "84f64d4adaf24a90a3b00a1ed06eaed4" } });
-            console.log(response.data);
+            // console.log(response.data);
             setTeam(response.data);
             setTeamName(response.data.name);
             const colors = response.data.clubColors.split(" / "); // ["Red", "White"]
             setTeamColors(colors[0]); // Lấy màu đầu tiên
             setSquad(response.data.squad);
-            console.log("Màu sắc đội bóng:", colors[0]);
+            // console.log("Màu sắc đội bóng:", colors[0]);
         } catch (error) {
-            console.error("Lỗi gọi API:", error);
+            // console.error("Lỗi gọi API:", error);
         }
     };
     // Hàm chọn ngẫu nhiên 3 cầu thủ
@@ -88,13 +88,13 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
                 const clubData = response.data.data.find((team) => team.name.toLowerCase() === teamName.toLowerCase());
                 if (clubData) {
                     setTeamStats(clubData);
-                    // console.log("Dữ liệu thống kê đội bóng:", clubData);
+                    // // console.log("Dữ liệu thống kê đội bóng:", clubData);
                 } else {
                     setError("Không tìm thấy câu lạc bộ");
                 }
             }
         } catch (error) {
-            console.error("Lỗi gọi API:", error);
+            // console.error("Lỗi gọi API:", error);
         }
     };
     useEffect(() => {
@@ -106,8 +106,8 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
         fetchTeam();
     }, [teamId]);
     useEffect(() => {
-        console.log("Dữ liệu team:", team);
-        // console.log("Dữ liệu team:", team.shortName);
+        // console.log("Dữ liệu team:", team);
+        // // console.log("Dữ liệu team:", team.shortName);
     }, [team]);
 
     useEffect(() => {
@@ -135,7 +135,7 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
                     return 'https://via.placeholder.com/80';  // Ảnh mặc định nếu không có dữ liệu
                 }
             } catch (error) {
-                // console.error("Lỗi tải ảnh cầu thủ:", error);
+                // // console.error("Lỗi tải ảnh cầu thủ:", error);
                 return 'https://via.placeholder.com/80'; // Ảnh mặc định khi lỗi
             }
         };
@@ -746,9 +746,9 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
             venue: team.venue,
             website: team.website,
           };
-          console.log("data team update", data)
+          // console.log("data team update", data)
           const res  = await updateUserFavouriteTeam(data);
-          setUser(res.data.data)
+          setUser(res.data)
     } else{
         const data = {
             id: "",
@@ -760,9 +760,9 @@ setTeamId(foundTeam.id); // Lưu teamId vào state
             venue: "",
             website: "",
           };
-          console.log("data team update", data)
+          // console.log("data team update", data)
           const res  = await updateUserFavouriteTeam(data);
-          setUser(res.data.data)
+          setUser(res.data)
 
     }
     
