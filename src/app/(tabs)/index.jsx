@@ -138,9 +138,7 @@ const Header = () => {
                 {loading ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#fff" />
-                        <Text style={styles.loadingText}>
-                            Đang tải lịch thi đấu...
-                        </Text>
+                        <Text style={styles.loadingText}>Loading...</Text>
                     </View>
                 ) : matches.length > 0 ? (
                     <View style={styles.matchesContainer}>
