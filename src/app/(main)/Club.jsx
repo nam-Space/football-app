@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Linking,
+    ActivityIndicator,
 } from "react-native";
 import { Button } from "react-native-paper";
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
@@ -144,11 +145,20 @@ const TeamScreen = () => {
         fetchTeamStats();
     }, [teamName]);
     if (!team) {
-        return <Text>Đang tải dữ liệu...</Text>;
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3b0053" />
+            </View>
+        );
     }
     // Render nội dung theo tab
     const renderTabContent = () => {
-        if (!team) return <Text>Đang tải dữ liệu...</Text>;
+        if (!team)
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#3b0053" />
+                </View>
+            );
         // Hàm lọc cầu thủ theo vị trí
         const filterPlayersByPosition = (position) => {
             return team.squad.filter(
@@ -1274,6 +1284,11 @@ const TeamScreen = () => {
 
 // CSS Styles
 const styles = {
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
     linkButton: {
         flexDirection: "row",
         justifyContent: "space-between",
