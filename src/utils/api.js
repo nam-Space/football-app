@@ -106,6 +106,8 @@ export const getTeamDetailAPI = (teamId) =>
 export const getTeamMatchesAPI = (teamId, config) =>
     axios.get(`/api/teams/team-matches/${teamId}`, { params: { ...config } });
 
+export const getCompetitionTeamsAPI = (config) =>
+    axios.get(`/api/competitions/competition-teams`, { params: { ...config } });
 /* Player */
 export const getPlayerDetailAPI = (playerId) =>
     axios.get(`/api/players/${playerId}`);
