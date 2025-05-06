@@ -30,39 +30,83 @@ const HomeNewsDetailScreen = () => {
     const [editCommentId, setEditCommentId] = useState(null);
 
     const handleCommentSubmit = async () => {
+        if (!user) {
+            console.error("User not logged in");
+            router.push('/login');
+            return;
+        }
+
         if (comment.trim()) {
             const commentData = {
-                content: comment,
-                articleId: params.id,
+                commentContent: comment,
+                titleArticle: params.title,
+                descriptionArticle: params.description,
+                contentArticle: params.description,
+                urlArticle: params.url
             };
+
+            console.log("Submitting comment with data:", commentData);
 
             try {
                 let res;
                 if (editCommentId) {
-                    res = await updateCommentAPI(editCommentId, { content: comment });
+                    console.log("Updating comment:", editCommentId);
+                    res = await updateCommentAPI(editCommentId, { commentContent: comment });
+                    console.log("Update response:", res);
                     setEditCommentId(null);
-                    setComments(comments.map(c => 
-                        c._id === editCommentId 
-                            ? { ...c, content: comment }
+                    setComments(comments.map(c =>
+                        c._id === editCommentId
+                            ? { ...c, commentContent: comment }
                             : c
                     ));
                 } else {
-                    res = await createCommentAPI(commentData);
+                    console.log("Creating new comment");
+                    res = await createCommentAPI(params.id, commentData);
+                    console.log("Create response:", res);
                     if (res.data) {
-                        setComments([res.data, ...comments]);
+                        fetchComments();
+                    } else {
+                        console.error("No data in create response:", res);
+                        if (res.message) {
+                            console.error("Error message:", res.message);
+                        }
                     }
                 }
                 setComment("");
             } catch (error) {
                 console.error("Error submitting comment:", error);
+                console.error("Error details:", error.message);
+                if (error.response) {
+                    console.error("Error response:", error.response.data);
+                }
             }
         }
     };
 
     const fetchComments = async () => {
-        const res = await getAllCommentsByArticleIdAPI(params.id);
-        if (res.data) {
-            setComments(res.data);
+        console.log("Fetching comments for article ID:", params.id);
+        try {
+            if (!params.id) {
+                console.error("No article ID provided");
+                return;
+            }
+
+            const res = await getAllCommentsByArticleIdAPI(params.id);
+            console.log("Full API response:", JSON.stringify(res, null, 2));
+            
+            if (!res || !res.data) {
+                console.error("Invalid API response:", res);
+                return;
+            }
+
+            // Sort comments by createdAt descending
+            const sortedComments = [...res.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            console.log("Setting comments:", sortedComments);
+            setComments(Array.isArray(sortedComments) ? sortedComments : []);
+        } catch (error) {
+            console.error("Error in fetchComments:", error);
+            console.error("Error details:", error.message);
+            setComments([]);
         }
     };
 
@@ -79,11 +123,12 @@ const HomeNewsDetailScreen = () => {
     };
 
     const handleCommentEdit = (comment) => {
-        setComment(comment.content);
+        setComment(comment.commentContent);
         setEditCommentId(comment._id);
     };
 
     useEffect(() => {
+        console.log("Component mounted/updated with params:", params);
         const loadData = async () => {
             try {
                 await fetchComments();
@@ -156,6 +201,7 @@ const HomeNewsDetailScreen = () => {
             <View style={styles.footer}>
                 <View style={styles.commentSection}>
                     <Text style={styles.commentTitle}>Bình luận ({comments.length})</Text>
+                    {console.log("Current comments state:", comments)}
 
                     {user ? (
                         <View style={styles.commentInputContainer}>
@@ -183,47 +229,26 @@ const HomeNewsDetailScreen = () => {
                         </TouchableOpacity>
                     )}
 
-                    <ScrollView style={styles.commentsList}>
-                        {comments.map((comment, index) => (
-                            <View key={comment._id} style={styles.commentItem}>
-                                <View style={styles.commentHeader}>
-                                    <Image
-                                        source={{ uri: comment.user?.avatar || 'https://via.placeholder.com/40' }}
-                                        style={styles.avatar}
-                                    />
-                                    <View style={styles.commentInfo}>
-                                        <Text style={styles.name}>{comment.user?.name}</Text>
-                                        <Text style={styles.commentTime}>
-                                            {moment(comment.createdAt).fromNow()}
-                                        </Text>
-                                    </View>
-                                    {user?._id === comment.user?._id && (
-                                        <View style={styles.commentActions}>
-                                            <TouchableOpacity
-                                                onPress={() => handleCommentEdit(comment)}
-                                                style={styles.editButton}
-                                            >
-                                                <Text style={styles.buttonText}>Sửa</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                onPress={() =>
-                                                    handleCommentDelete(comment._id)
-                                                }
-                                                style={styles.deleteButton}
-                                            >
-                                                <Text style={styles.buttonText}>
-                                                    Xóa
-                                                </Text>
-                                            </TouchableOpacity>
+                    <View style={{ maxHeight: 200 }}>
+                        <ScrollView style={styles.commentsList}>
+                            {comments.map((comment) => {
+                                console.log("Rendering comment:", comment);
+                                return (
+                                    <View key={comment._id} style={styles.commentItem}>
+                                        <View style={styles.commentHeader}>
+                                            <View style={styles.commentInfo}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                    <Text style={styles.name}>{comment.user?.name}</Text>
+                                                    <Text style={styles.commentTime}> • {moment(comment.createdAt).fromNow()}</Text>
+                                                </View>
+                                                <Text style={styles.commentText}>{comment.commentContent}</Text>
+                                            </View>
                                         </View>
-                                    )}
-                                </View>
-                                <Text style={styles.commentText}>
-                                    {comment.content}
-                                </Text>
-                            </View>
-                        ))}
-                    </ScrollView>
+                                    </View>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
                 </View>
             </View>
         </SafeAreaView>
@@ -328,55 +353,38 @@ const styles = StyleSheet.create({
         flexGrow: 0,
     },
     commentItem: {
-        backgroundColor: '#333',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 10,
+        backgroundColor: '#23272f',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 2,
     },
     commentHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 5,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 10,
+        alignItems: 'flex-start',
     },
     commentInfo: {
         flex: 1,
     },
     name: {
         fontSize: 16,
-        fontWeight: "bold",
-        color: "#fff",
+        fontWeight: 'bold',
+        color: '#fff',
+        marginRight: 8,
     },
     commentTime: {
         fontSize: 12,
-        color: "#999",
-        marginLeft: 10,
+        color: '#aaa',
     },
     commentText: {
-        fontSize: 14,
-        color: "#fff",
-    },
-    commentActions: {
-        flexDirection: 'row',
-    },
-    editButton: {
-        backgroundColor: "#3b0053",
-        padding: 5,
-        borderRadius: 5,
-        marginRight: 10,
-    },
-    deleteButton: {
-        backgroundColor: "#ff6347",
-        padding: 5,
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: "#fff",
+        fontSize: 15,
+        color: '#e0e0e0',
+        marginTop: 4,
+        lineHeight: 20,
     },
 });
 
