@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar, Text } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,12 @@ export default function VideoDetail() {
 
     return (
         <View style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color="white" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Video detail</Text>
+            </View>
             <WebView
                 source={{ uri: params.url }}
                 style={styles.video}
@@ -23,12 +29,6 @@ export default function VideoDetail() {
                 mediaPlaybackRequiresUserAction={false}
                 automaticallyAdjustContentInsets={true}
             />
-            <TouchableOpacity 
-                style={styles.backButton}
-                onPress={() => router.back()}
-            >
-                <Ionicons name="arrow-back" size={28} color="white" />
-            </TouchableOpacity>
         </View>
     );
 }
@@ -38,20 +38,30 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
-    video: {
-        flex: 1,
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 28,
+        paddingBottom: 10,
+        paddingHorizontal: 10,
+        backgroundColor: '#000',
+        zIndex: 10,
     },
     backButton: {
-        position: 'absolute',
-        top: 20,
-        left: 15,
         padding: 8,
-        backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 20,
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 999,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'white',
+        marginLeft: 10,
+    },
+    video: {
+        flex: 1,
     },
 }); 

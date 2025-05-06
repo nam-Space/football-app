@@ -91,7 +91,7 @@ const HomeNewsDetailScreen = () => {
                 return;
             }
 
-            const res = await getAllCommentsByArticleIdAPI(params.id);
+        const res = await getAllCommentsByArticleIdAPI(params.id);
             console.log("Full API response:", JSON.stringify(res, null, 2));
             
             if (!res || !res.data) {
@@ -234,13 +234,13 @@ const HomeNewsDetailScreen = () => {
                             {comments.map((comment) => {
                                 console.log("Rendering comment:", comment);
                                 return (
-                                    <View key={comment._id} style={styles.commentItem}>
-                                        <View style={styles.commentHeader}>
-                                            <View style={styles.commentInfo}>
+                                <View key={comment._id} style={styles.commentItem}>
+                                    <View style={styles.commentHeader}>
+                                        <View style={styles.commentInfo}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                    <Text style={styles.name}>{comment.user?.name}</Text>
+                                            <Text style={styles.name}>{comment.user?.name}</Text>
                                                     <Text style={styles.commentTime}> • {moment(comment.createdAt).fromNow()}</Text>
-                                                </View>
+                                        </View>
                                                 <Text style={styles.commentText}>{comment.commentContent}</Text>
                                             </View>
                                         </View>
