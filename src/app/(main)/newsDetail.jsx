@@ -152,7 +152,13 @@ const NewsDetail = () => {
                     <View key={index} style={styles.commentContainer}>
                         <View style={styles.commentHeader}>
                             <Image
-                                source={{ uri: comment.avatar }}
+                                source={
+                                    comment.user?.avatar
+                                        ? {
+                                              uri: comment.user.avatar,
+                                          }
+                                        : require(`../../images/user/default-avatar.png`)
+                                }
                                 style={styles.avatar}
                             />
                             <Text style={styles.name}>{comment.user.name}</Text>

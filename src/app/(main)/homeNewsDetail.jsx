@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
     View,
     ActivityIndicator,
@@ -9,9 +9,9 @@ import {
     TouchableOpacity,
     Image,
     ScrollView,
-} from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { WebView } from 'react-native-webview';
+} from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import { WebView } from "react-native-webview";
 import { useApp } from "@/context/AppContext";
 import moment from "moment";
 import {
@@ -32,7 +32,7 @@ const HomeNewsDetailScreen = () => {
     const handleCommentSubmit = async () => {
         if (!user) {
             console.error("User not logged in");
-            router.push('/login');
+            router.push("/login");
             return;
         }
 
@@ -42,27 +42,25 @@ const HomeNewsDetailScreen = () => {
                 titleArticle: params.title,
                 descriptionArticle: params.description,
                 contentArticle: params.description,
-                urlArticle: params.url
+                urlArticle: params.url,
             };
-
-            console.log("Submitting comment with data:", commentData);
 
             try {
                 let res;
                 if (editCommentId) {
-                    console.log("Updating comment:", editCommentId);
-                    res = await updateCommentAPI(editCommentId, { commentContent: comment });
-                    console.log("Update response:", res);
+                    res = await updateCommentAPI(editCommentId, {
+                        commentContent: comment,
+                    });
                     setEditCommentId(null);
-                    setComments(comments.map(c =>
-                        c._id === editCommentId
-                            ? { ...c, commentContent: comment }
-                            : c
-                    ));
+                    setComments(
+                        comments.map((c) =>
+                            c._id === editCommentId
+                                ? { ...c, commentContent: comment }
+                                : c
+                        )
+                    );
                 } else {
-                    console.log("Creating new comment");
                     res = await createCommentAPI(params.id, commentData);
-                    console.log("Create response:", res);
                     if (res.data) {
                         fetchComments();
                     } else {
@@ -84,24 +82,23 @@ const HomeNewsDetailScreen = () => {
     };
 
     const fetchComments = async () => {
-        console.log("Fetching comments for article ID:", params.id);
         try {
             if (!params.id) {
                 console.error("No article ID provided");
                 return;
             }
 
-        const res = await getAllCommentsByArticleIdAPI(params.id);
-            console.log("Full API response:", JSON.stringify(res, null, 2));
-            
+            const res = await getAllCommentsByArticleIdAPI(params.id);
+
             if (!res || !res.data) {
                 console.error("Invalid API response:", res);
                 return;
             }
 
             // Sort comments by createdAt descending
-            const sortedComments = [...res.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            console.log("Setting comments:", sortedComments);
+            const sortedComments = [...res.data].sort(
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            );
             setComments(Array.isArray(sortedComments) ? sortedComments : []);
         } catch (error) {
             console.error("Error in fetchComments:", error);
@@ -128,7 +125,6 @@ const HomeNewsDetailScreen = () => {
     };
 
     useEffect(() => {
-        console.log("Component mounted/updated with params:", params);
         const loadData = async () => {
             try {
                 await fetchComments();
@@ -142,10 +138,15 @@ const HomeNewsDetailScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    style={styles.backButton}
+                >
                     <Text style={styles.backButtonText}>←</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle} numberOfLines={1}>{params.title}</Text>
+                <Text style={styles.headerTitle} numberOfLines={1}>
+                    {params.title}
+                </Text>
             </View>
 
             <View style={styles.content}>
@@ -200,14 +201,15 @@ const HomeNewsDetailScreen = () => {
 
             <View style={styles.footer}>
                 <View style={styles.commentSection}>
-                    <Text style={styles.commentTitle}>Bình luận ({comments.length})</Text>
-                    {console.log("Current comments state:", comments)}
+                    <Text style={styles.commentTitle}>
+                        Comment ({comments.length})
+                    </Text>
 
                     {user ? (
                         <View style={styles.commentInputContainer}>
                             <TextInput
                                 style={styles.commentInput}
-                                placeholder="Viết bình luận..."
+                                placeholder="Write a comment..."
                                 placeholderTextColor="#666"
                                 value={comment}
                                 onChangeText={setComment}
@@ -217,31 +219,70 @@ const HomeNewsDetailScreen = () => {
                                 style={styles.submitButton}
                                 onPress={handleCommentSubmit}
                             >
-                                <Text style={styles.submitButtonText}>Gửi</Text>
+                                <Text style={styles.submitButtonText}>
+                                    Send
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <TouchableOpacity
                             style={styles.loginButton}
-                            onPress={() => router.push('/login')}
+                            onPress={() => router.push("/login")}
                         >
-                            <Text style={styles.loginButtonText}>Đăng nhập để bình luận</Text>
+                            <Text style={styles.loginButtonText}>
+                                Đăng nhập để bình luận
+                            </Text>
                         </TouchableOpacity>
                     )}
 
                     <View style={{ maxHeight: 200 }}>
                         <ScrollView style={styles.commentsList}>
                             {comments.map((comment) => {
-                                console.log("Rendering comment:", comment);
                                 return (
-                                <View key={comment._id} style={styles.commentItem}>
-                                    <View style={styles.commentHeader}>
-                                        <View style={styles.commentInfo}>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <Text style={styles.name}>{comment.user?.name}</Text>
-                                                    <Text style={styles.commentTime}> • {moment(comment.createdAt).fromNow()}</Text>
-                                        </View>
-                                                <Text style={styles.commentText}>{comment.commentContent}</Text>
+                                    <View
+                                        key={comment._id}
+                                        style={styles.commentItem}
+                                    >
+                                        <View style={styles.commentHeader}>
+                                            <View style={styles.commentInfo}>
+                                                <View
+                                                    style={{
+                                                        flexDirection: "row",
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    <Image
+                                                        source={
+                                                            comment.user?.avatar
+                                                                ? {
+                                                                      uri: comment
+                                                                          .user
+                                                                          .avatar,
+                                                                  }
+                                                                : require(`../../images/user/default-avatar.png`)
+                                                        }
+                                                        style={styles.avatar}
+                                                    />
+                                                    <Text style={styles.name}>
+                                                        {comment.user?.name}
+                                                    </Text>
+                                                    <Text
+                                                        style={
+                                                            styles.commentTime
+                                                        }
+                                                    >
+                                                        {" "}
+                                                        •{" "}
+                                                        {moment(
+                                                            comment.createdAt
+                                                        ).fromNow()}
+                                                    </Text>
+                                                </View>
+                                                <Text
+                                                    style={styles.commentText}
+                                                >
+                                                    {comment.commentContent}
+                                                </Text>
                                             </View>
                                         </View>
                                     </View>
@@ -258,56 +299,62 @@ const HomeNewsDetailScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: "#1a1a1a",
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         padding: 10,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: "#1a1a1a",
         borderBottomWidth: 1,
-        borderBottomColor: '#333',
+        borderBottomColor: "#333",
         height: 60,
     },
     content: {
         flex: 1,
     },
     footer: {
-        backgroundColor: '#1a1a1a',
+        backgroundColor: "#1a1a1a",
         borderTopWidth: 1,
-        borderTopColor: '#333',
-        maxHeight: '40%',
+        borderTopColor: "#333",
+        maxHeight: "40%",
     },
     backButton: {
         padding: 10,
     },
     backButtonText: {
-        color: '#fff',
+        color: "#fff",
         fontSize: 24,
     },
     headerTitle: {
         flex: 1,
-        color: '#fff',
+        color: "#fff",
         fontSize: 16,
         marginLeft: 10,
     },
     webview: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: "#1a1a1a",
     },
     loadingContainer: {
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#1a1a1a',
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#1a1a1a",
     },
     commentSection: {
         padding: 10,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: "#1a1a1a",
+    },
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 10,
     },
     commentTitle: {
         fontSize: 18,
@@ -316,73 +363,73 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     commentInputContainer: {
-        flexDirection: 'row',
+        flexDirection: "row",
         marginBottom: 15,
     },
     commentInput: {
         flex: 1,
-        backgroundColor: '#333',
-        color: '#ffffff',
+        backgroundColor: "#333",
+        color: "#ffffff",
         borderRadius: 8,
         padding: 10,
         marginRight: 10,
         minHeight: 40,
     },
     submitButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: "#007AFF",
         paddingHorizontal: 15,
         paddingVertical: 10,
         borderRadius: 8,
-        justifyContent: 'center',
+        justifyContent: "center",
     },
     submitButtonText: {
-        color: '#ffffff',
-        fontWeight: 'bold',
+        color: "#ffffff",
+        fontWeight: "bold",
     },
     loginButton: {
-        backgroundColor: '#333',
+        backgroundColor: "#333",
         padding: 10,
         borderRadius: 8,
-        alignItems: 'center',
+        alignItems: "center",
         marginBottom: 15,
     },
     loginButtonText: {
-        color: '#ffffff',
+        color: "#ffffff",
     },
     commentsList: {
         flexGrow: 0,
     },
     commentItem: {
-        backgroundColor: '#23272f',
+        backgroundColor: "#23272f",
         borderRadius: 12,
         padding: 12,
         marginBottom: 14,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 4,
         elevation: 2,
     },
     commentHeader: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
+        flexDirection: "row",
+        alignItems: "flex-start",
     },
     commentInfo: {
         flex: 1,
     },
     name: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#fff',
+        fontWeight: "bold",
+        color: "#fff",
         marginRight: 8,
     },
     commentTime: {
         fontSize: 12,
-        color: '#aaa',
+        color: "#aaa",
     },
     commentText: {
         fontSize: 15,
-        color: '#e0e0e0',
+        color: "#e0e0e0",
         marginTop: 4,
         lineHeight: 20,
     },

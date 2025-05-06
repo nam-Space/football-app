@@ -36,13 +36,15 @@ function RootLayout() {
                     }}
                 >
                     <Stack.Screen name="+not-found" />
-                    
+
                     <Stack.Screen
                         name="(main)/match"
                         options={{
                             headerShown: true,
                             title: "Fixture",
-                            headerStyle: { backgroundColor: theme.colors.primary },
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
                             headerTintColor: "white",
                         }}
                     />
@@ -52,7 +54,9 @@ function RootLayout() {
                         options={{
                             headerShown: true,
                             title: "Result",
-                            headerStyle: { backgroundColor: theme.colors.primary },
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
                             headerTintColor: "white",
                         }}
                     />
@@ -62,7 +66,9 @@ function RootLayout() {
                         options={{
                             headerShown: true,
                             title: "Table",
-                            headerStyle: { backgroundColor: theme.colors.primary },
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
                             headerTintColor: "white",
                         }}
                     />
@@ -80,7 +86,9 @@ function RootLayout() {
                         options={{
                             headerShown: true,
                             title: "Match Detail",
-                            headerStyle: { backgroundColor: theme.colors.primary },
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
                             headerTintColor: "white",
                         }}
                     />
@@ -94,11 +102,24 @@ function RootLayout() {
                         }}
                     /> */}
                     <Stack.Screen
+                        name="(main)/homeNewsDetail"
+                        options={{
+                            headerShown: true,
+                            title: "News Detail",
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
+                            headerTintColor: "white",
+                        }}
+                    />
+                    <Stack.Screen
                         name="(main)/newsDetail"
                         options={{
                             headerShown: true,
                             title: "News Detail",
-                            headerStyle: { backgroundColor: theme.colors.primary },
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
                             headerTintColor: "white",
                         }}
                     />
@@ -108,7 +129,9 @@ function RootLayout() {
                         options={{
                             headerShown: true,
                             title: "Battle Detail",
-                            headerStyle: { backgroundColor: theme.colors.primary },
+                            headerStyle: {
+                                backgroundColor: theme.colors.primary,
+                            },
                             headerTintColor: "white",
                         }}
                     />
