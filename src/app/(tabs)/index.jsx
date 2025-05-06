@@ -549,6 +549,7 @@ const MatchesTab = () => {
 
 const LeagueTableTab = () => {
     const [rankings, setRankings] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -564,13 +565,23 @@ const LeagueTableTab = () => {
                     points: item.points,
                 }));
                 setRankings(tableData);
+                setLoading(false);
             } catch (err) {
                 setError("Lỗi khi tải dữ liệu từ API");
+                setLoading(false);
             }
         };
 
         fetchStandings();
     }, []);
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#00ff85" />
+            </View>
+        );
+    }
 
     if (error) {
         return (
