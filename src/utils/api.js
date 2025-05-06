@@ -35,10 +35,17 @@ export const registerUserAPI = (data) => axios.post(`/api/users/register`, { ...
 
 export const getUserAccountAPI = () => axios.get(`/api/users/account`);
 
-export const updateUser = (id, data) => axios.put(`/api/users/${id}`, data);
+export const updateUser = (id, data) => {
+    const url = `/api/users/${id}`;
+    return axios.put(url, data, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+};
 
 export const updateUserFavouriteTeam = (data) =>
-    axios.put(`/api/users/update-favourite`, { ...data });
+    axios.post(`/api/users/update-favourite`, { ...data });
 
 export const getPlayerImageAPI = (playerName) =>
     axios.get(`/api/players/player-image-url/${playerName}`);
@@ -99,6 +106,8 @@ export const getTeamDetailAPI = (teamId) =>
 export const getTeamMatchesAPI = (teamId, config) =>
     axios.get(`/api/teams/team-matches/${teamId}`, { params: { ...config } });
 
+export const getCompetitionTeamsAPI = (config) =>
+    axios.get(`/api/competitions/competition-teams`, { params: { ...config } });
 /* Player */
 export const getPlayerDetailAPI = (playerId) =>
     axios.get(`/api/players/${playerId}`);
@@ -146,7 +155,6 @@ export const getUpcomingMatches = async () => {
     const encodedSlug = encodeURIComponent(slug);
 
     const res = await apiFB.get("/competitions/PL/matches?dateFrom=2025-04-05&dateTo=2025-04-05&status=SCHEDULED");
-    console.log(res);
 
     const matches = res?.data?.data?.matches || [];
     return { matches };

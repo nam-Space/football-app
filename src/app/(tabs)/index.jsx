@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
     getCompetitionStandingDetailAPI,
     getMatchesAPI,
@@ -24,19 +24,20 @@ import {
     ActivityIndicator,
     Platform,
     FlatList,
-    Linking
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+    Linking,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const App = () => {
-    const [activeTab, setActiveTab] = useState('matches');
+    const [activeTab, setActiveTab] = useState("matches");
     const [matches, setMatches] = useState([]); // lưu dữ liệu trận đấu
 
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'matches':
+            case "matches":
                 return <MatchesTab />;
-            case 'league':
+            case "league":
                 return <LeagueTableTab />;
             default:
                 return <MatchesTab />;
@@ -49,7 +50,10 @@ const App = () => {
             <ScrollView style={styles.scrollView}>
                 <Header />
                 <NewsHighlight />
-                <TabSelector activeTab={activeTab} setActiveTab={setActiveTab} />
+                <TabSelector
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                />
                 {renderTabContent()}
                 <ClubHighlight />
                 <RelatedNews />
@@ -76,47 +80,53 @@ const Header = () => {
             }
             setLoading(false);
         } catch (err) {
-            console.error('Lỗi khi tải lịch thi đấu:', err);
+            console.error("Lỗi khi tải lịch thi đấu:", err);
             setLoading(false);
         }
     };
 
     const formatMatchTime = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
+        return date.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
         });
     };
 
     const formatDate = () => {
         const date = new Date();
-        return date.toLocaleDateString('en-US', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long'
+        return date.toLocaleDateString("en-US", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
         });
     };
 
     const getMatchScore = (match, status) => {
-        const homeTeam = match.competitions[0].competitors.find(c => c.homeAway === 'home');
-        const awayTeam = match.competitions[0].competitors.find(c => c.homeAway === 'away');
+        const homeTeam = match.competitions[0].competitors.find(
+            (c) => c.homeAway === "home"
+        );
+        const awayTeam = match.competitions[0].competitors.find(
+            (c) => c.homeAway === "away"
+        );
 
         // Hiển thị tỉ số cho trận đã kết thúc hoặc đang diễn ra
-        if (status === 'FT' || status.includes("'") || status === 'HT') {
-    return (
+        if (status === "FT" || status.includes("'") || status === "HT") {
+            return (
                 <Text style={styles.matchScore}>
                     {homeTeam.score} - {awayTeam.score}
                 </Text>
             );
         }
         // Hiển thị thời gian cho trận chưa bắt đầu
-        return <Text style={styles.matchTime}>{formatMatchTime(match.date)}</Text>;
+        return (
+            <Text style={styles.matchTime}>{formatMatchTime(match.date)}</Text>
+        );
     };
 
     return (
-        <LinearGradient 
-            colors={['#ff0080', '#ff8000']} 
+        <LinearGradient
+            colors={["#ff0080", "#ff8000"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.headerContainer}
@@ -128,47 +138,91 @@ const Header = () => {
                 {loading ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#fff" />
-                        <Text style={styles.loadingText}>Đang tải lịch thi đấu...</Text>
+                        <Text style={styles.loadingText}>Loading...</Text>
                     </View>
                 ) : matches.length > 0 ? (
                     <View style={styles.matchesContainer}>
                         {matches.map((match) => {
-                            const homeTeam = match.competitions[0].competitors.find(c => c.homeAway === 'home');
-                            const awayTeam = match.competitions[0].competitors.find(c => c.homeAway === 'away');
+                            const homeTeam =
+                                match.competitions[0].competitors.find(
+                                    (c) => c.homeAway === "home"
+                                );
+                            const awayTeam =
+                                match.competitions[0].competitors.find(
+                                    (c) => c.homeAway === "away"
+                                );
                             const status = match.status.type.shortDetail;
-                            
+
                             return (
                                 <View key={match.id} style={styles.matchCard}>
-                                    <View style={styles.matchTeamContainer}>
+                                    <TouchableOpacity
+                                        style={styles.matchTeamContainer}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/Club",
+                                                params: {
+                                                    teamName1:
+                                                        homeTeam.team
+                                                            .displayName,
+                                                },
+                                            })
+                                        }
+                                        // onPress={() => router.push(pathname:"/Club",  params: { teamName1: homeTeam.team.shortDisplayName } )}}
+                                    >
                                         <Image
                                             source={{ uri: homeTeam.team.logo }}
                                             style={styles.matchTeamLogo}
                                         />
-                                        <Text style={styles.matchTeamName}>{homeTeam.team.name}</Text>
-            </View>
-                                    
+                                        <Text style={styles.matchTeamName}>
+                                            {homeTeam.team.name}
+                                        </Text>
+                                    </TouchableOpacity>
+
                                     <View style={styles.matchScoreContainer}>
                                         {getMatchScore(match, status)}
-                                        <Text style={[
-                                            styles.matchStatus,
-                                            (status.includes("'") || status === 'HT') && styles.liveMatchStatus
-                                        ]}>{status}</Text>
+                                        <Text
+                                            style={[
+                                                styles.matchStatus,
+                                                (status.includes("'") ||
+                                                    status === "HT") &&
+                                                    styles.liveMatchStatus,
+                                            ]}
+                                        >
+                                            {status}
+                                        </Text>
                                     </View>
-                                    
-                                    <View style={styles.matchTeamContainer}>
+
+                                    <TouchableOpacity
+                                        style={styles.matchTeamContainer}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/Club",
+                                                params: {
+                                                    teamName1:
+                                                        awayTeam.team
+                                                            .displayName,
+                                                },
+                                            })
+                                        }
+                                        // onPress={() => router.push({ pathname: "/(tabs)/club", params: { teamName1: awayTeam.team.shortDisplayName } })}
+                                    >
                                         <Image
                                             source={{ uri: awayTeam.team.logo }}
                                             style={styles.matchTeamLogo}
                                         />
-                                        <Text style={styles.matchTeamName}>{awayTeam.team.name}</Text>
-                </View>
-        </View>
-    );
+                                        <Text style={styles.matchTeamName}>
+                                            {awayTeam.team.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            );
                         })}
-        </View>
+                    </View>
                 ) : (
                     <View style={styles.noMatchesContainer}>
-                        <Text style={styles.noMatchesText}>Không có lịch thi đấu</Text>
+                        <Text style={styles.noMatchesText}>
+                            Không có lịch thi đấu
+                        </Text>
                     </View>
                 )}
             </View>
@@ -186,24 +240,27 @@ const NewsHighlight = () => {
     const fetchNews = async () => {
         try {
             const result = await getNewsHighlight();
-            const selectedArticles = result.slice(0, 3).map(article => ({
+            const selectedArticles = result.slice(0, 3).map((article) => ({
                 id: article.id,
                 title: article.headline,
                 description: article.description,
                 image: article.images?.[0]?.url,
                 url: article.links?.web?.href,
-                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                publishedDate: new Date(article.published).toLocaleDateString(
+                    "en-US",
+                    {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    }
+                ),
             }));
 
             setNewsList(selectedArticles);
         } catch (err) {
-            console.error('❌ Failed to fetch ESPN news:', err);
+            console.error("❌ Failed to fetch ESPN news:", err);
         }
     };
 
@@ -212,16 +269,18 @@ const NewsHighlight = () => {
     return (
         <View style={styles.newsHighlightContainer}>
             <View style={styles.newsHeader}>
-                    <Image
-                        source={{ uri: 'https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png' }}
+                <Image
+                    source={{
+                        uri: "https://logodownload.org/wp-content/uploads/2016/03/premier-league-logo-0.png",
+                    }}
                     style={styles.newsLogo}
-                        resizeMode="contain"
-                    />
-                </View>
+                    resizeMode="contain"
+                />
+            </View>
 
-                {newsList.map((article, index) => (
-                    <TouchableOpacity
-                        key={index}
+            {newsList.map((article, index) => (
+                <TouchableOpacity
+                    key={index}
                     style={styles.newsCard}
                     onPress={() => {
                         router.push({
@@ -232,8 +291,8 @@ const NewsHighlight = () => {
                                 image: article.image,
                                 description: article.description,
                                 url: article.url,
-                                publishedDate: article.publishedDate
-                            }
+                                publishedDate: article.publishedDate,
+                            },
                         });
                     }}
                 >
@@ -248,14 +307,18 @@ const NewsHighlight = () => {
                         </View>
                     </View>
                     <View style={styles.newsContent}>
-                        <Text style={styles.newsTitle} numberOfLines={2}>{article.title}</Text>
+                        <Text style={styles.newsTitle} numberOfLines={2}>
+                            {article.title}
+                        </Text>
                         <Text style={styles.newsDescription} numberOfLines={2}>
                             {article.description}
                         </Text>
-                        <Text style={styles.newsDate}>{article.publishedDate}</Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                        <Text style={styles.newsDate}>
+                            {article.publishedDate}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            ))}
         </View>
     );
 };
@@ -264,14 +327,20 @@ const TabSelector = ({ activeTab, setActiveTab }) => {
     return (
         <View style={styles.tabSelector}>
             <TouchableOpacity
-                style={[styles.tabButton, activeTab === 'matches' && styles.activeTabButton]}
-                onPress={() => setActiveTab('matches')}
+                style={[
+                    styles.tabButton,
+                    activeTab === "matches" && styles.activeTabButton,
+                ]}
+                onPress={() => setActiveTab("matches")}
             >
                 <Text style={styles.tabButtonText}>Matches</Text>
             </TouchableOpacity>
             <TouchableOpacity
-                style={[styles.tabButton, activeTab === 'league' && styles.activeTabButton]}
-                onPress={() => setActiveTab('league')}
+                style={[
+                    styles.tabButton,
+                    activeTab === "league" && styles.activeTabButton,
+                ]}
+                onPress={() => setActiveTab("league")}
             >
                 <Text style={styles.tabButtonText}>League Table</Text>
             </TouchableOpacity>
@@ -293,55 +362,49 @@ const MatchesTab = () => {
             const today = new Date();
             const nextMonth = new Date();
             nextMonth.setMonth(today.getMonth() + 1);
-            
-            const dateFrom = today.toISOString().split('T')[0];
-            const dateTo = nextMonth.toISOString().split('T')[0];
-            
-            console.log('Date range:', { dateFrom, dateTo }); // Debug log
-            
-            const res = await getMatchesAPI(`competitions/PL/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`);
-            
+
+            const dateFrom = today.toISOString().split("T")[0];
+            const dateTo = nextMonth.toISOString().split("T")[0];
+
+            const res = await getMatchesAPI(
+                `competitions/PL/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`
+            );
+
             if (res && res.data && res.data.matches) {
                 const allMatches = res.data.matches;
-                console.log('All matches:', allMatches); // Debug log
-                
+
                 // Sắp xếp theo thời gian tăng dần
-                const sortedMatches = allMatches.sort((a, b) => 
-                    new Date(a.utcDate) - new Date(b.utcDate)
+                const sortedMatches = allMatches.sort(
+                    (a, b) => new Date(a.utcDate) - new Date(b.utcDate)
                 );
-                
+
                 // Lấy 10 trận sắp tới
                 const next10Matches = sortedMatches.slice(0, 10);
-                console.log('Next 10 matches:', next10Matches); // Debug log
-                
+
                 const groupedMatches = groupMatchesByDate(next10Matches);
-                console.log('Grouped matches:', groupedMatches); // Debug log
-                
+
                 setMatches(groupedMatches);
             } else {
-                console.log('No matches found in Premier League'); // Debug log
-                setError('Không có trận đấu nào sắp diễn ra');
+                setError("Không có trận đấu nào sắp diễn ra");
             }
             setLoading(false);
         } catch (err) {
-            console.error('Lỗi khi tải dữ liệu trận đấu:', err);
-            setError('Không thể tải lịch thi đấu');
+            console.error("Lỗi khi tải dữ liệu trận đấu:", err);
+            setError("Không thể tải lịch thi đấu");
             setLoading(false);
         }
     };
 
     const groupMatchesByDate = (matches) => {
         if (!Array.isArray(matches)) {
-            console.log('Invalid matches data:', matches); // Debug log
             return {};
         }
-        
+
         return matches.reduce((groups, match) => {
             if (!match || !match.utcDate) {
-                console.log('Invalid match data:', match); // Debug log
                 return groups;
             }
-            
+
             const date = new Date(match.utcDate).toLocaleDateString("en-GB", {
                 weekday: "short",
                 day: "2-digit",
@@ -358,7 +421,7 @@ const MatchesTab = () => {
     };
 
     const formatTime = (dateString) => {
-        if (!dateString) return '';
+        if (!dateString) return "";
         return new Date(dateString).toLocaleTimeString("en-GB", {
             hour: "2-digit",
             minute: "2-digit",
@@ -366,7 +429,7 @@ const MatchesTab = () => {
     };
 
     const getScoreDisplay = (match) => {
-        if (!match) return '';
+        if (!match) return "";
         if (match.status === "FINISHED") {
             return `${match.score.fullTime.home} - ${match.score.fullTime.away}`;
         } else {
@@ -396,48 +459,88 @@ const MatchesTab = () => {
                 Object.entries(matches).map(([date, dayMatches]) => (
                     <View key={date} style={styles.matchDateGroup}>
                         <Text style={styles.matchDateText}>{date}</Text>
-                        {Array.isArray(dayMatches) && dayMatches.map((match) => (
-                            <TouchableOpacity
-                                key={match.id}
-                                style={styles.matchCard}
-                                onPress={() =>
-                                    router.push({
-                                        pathname: "/(main)/matchDetail",
-                                        params: {
-                                            homeTeamId: match.homeTeam.id,
-                                            awayTeamId: match.awayTeam.id,
-                                            matchDate: match.utcDate.split('T')[0],
-                                        },
-                                    })
-                                }
-                            >
-                                <View style={styles.matchTeamContainer}>
-                                    <Image
-                                        source={{ uri: match.homeTeam.crest }}
-                                        style={styles.matchTeamLogo}
-                                    />
-                                    <Text style={styles.matchTeamName}>{match.homeTeam.shortName}</Text>
-                                </View>
+                        {Array.isArray(dayMatches) &&
+                            dayMatches.map((match) => (
+                                <TouchableOpacity
+                                    key={match.id}
+                                    style={styles.matchCard}
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "/(main)/matchDetail",
+                                            params: {
+                                                homeTeamId: match.homeTeam.id,
+                                                awayTeamId: match.awayTeam.id,
+                                                matchDate:
+                                                    match.utcDate.split("T")[0],
+                                            },
+                                        })
+                                    }
+                                >
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/Club",
+                                                params: {
+                                                    teamName1:
+                                                        match.homeTeam
+                                                            .shortName,
+                                                },
+                                            })
+                                        }
+                                        style={styles.matchTeamContainer}
+                                    >
+                                        <Image
+                                            source={{
+                                                uri: match.homeTeam.crest,
+                                            }}
+                                            style={styles.matchTeamLogo}
+                                        />
+                                        <Text style={styles.matchTeamName}>
+                                            {match.homeTeam.shortName}
+                                        </Text>
+                                    </TouchableOpacity>
 
-                                <View style={styles.matchScoreContainer}>
-                                    <Text style={styles.matchScore}>{getScoreDisplay(match)}</Text>
-                                    <Text style={styles.matchStatus}>{match.status}</Text>
-                                </View>
+                                    <View style={styles.matchScoreContainer}>
+                                        <Text style={styles.matchScore}>
+                                            {getScoreDisplay(match)}
+                                        </Text>
+                                        <Text style={styles.matchStatus}>
+                                            {match.status}
+                                        </Text>
+                                    </View>
 
-                                <View style={styles.matchTeamContainer}>
-                                    <Image
-                                        source={{ uri: match.awayTeam.crest }}
-                                        style={styles.matchTeamLogo}
-                                    />
-                                    <Text style={styles.matchTeamName}>{match.awayTeam.shortName}</Text>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/Club",
+                                                params: {
+                                                    teamName1:
+                                                        match.awayTeam
+                                                            .shortName,
+                                                },
+                                            })
+                                        }
+                                        style={styles.matchTeamContainer}
+                                    >
+                                        <Image
+                                            source={{
+                                                uri: match.awayTeam.crest,
+                                            }}
+                                            style={styles.matchTeamLogo}
+                                        />
+                                        <Text style={styles.matchTeamName}>
+                                            {match.awayTeam.shortName}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </TouchableOpacity>
+                            ))}
                     </View>
                 ))
             ) : (
                 <View style={styles.noMatchesContainer}>
-                    <Text style={styles.noMatchesText}>Không có trận đấu nào sắp diễn ra</Text>
+                    <Text style={styles.noMatchesText}>
+                        Không có trận đấu nào sắp diễn ra
+                    </Text>
                 </View>
             )}
         </View>
@@ -458,11 +561,11 @@ const LeagueTableTab = () => {
                     teamLogo: item.team.crest,
                     played: item.playedGames,
                     goalDifference: item.goalDifference,
-                    points: item.points
+                    points: item.points,
                 }));
                 setRankings(tableData);
             } catch (err) {
-                setError('Lỗi khi tải dữ liệu từ API');
+                setError("Lỗi khi tải dữ liệu từ API");
             }
         };
 
@@ -507,27 +610,49 @@ const LeagueTableTab = () => {
                     };
 
                     return (
-                        <View key={index} style={[styles.leagueTableRow, getPositionStyle(item.position)]}>
+                        <View
+                            key={index}
+                            style={[
+                                styles.leagueTableRow,
+                                getPositionStyle(item.position),
+                            ]}
+                        >
                             <View style={styles.positionCell}>
-                                <Text style={styles.positionText}>{item.position}</Text>
-                    </View>
-                            <View style={styles.teamCell}>
-                        <Image
+                                <Text style={styles.positionText}>
+                                    {item.position}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/Club",
+                                        params: { teamName1: item.team },
+                                    })
+                                }
+                                style={styles.teamCell}
+                            >
+                                <Image
                                     source={{ uri: item.teamLogo }}
                                     style={styles.teamLogo}
-                        />
+                                />
                                 <Text style={styles.teamText}>{item.team}</Text>
-                    </View>
+                            </TouchableOpacity>
                             <View style={styles.statsCell}>
-                                <Text style={styles.statsText}>{item.played}</Text>
-                    </View>
+                                <Text style={styles.statsText}>
+                                    {item.played}
+                                </Text>
+                            </View>
                             <View style={styles.statsCell}>
-                                <Text style={styles.statsText}>{item.goalDifference}</Text>
-                    </View>
+                                <Text style={styles.statsText}>
+                                    {item.goalDifference}
+                                </Text>
+                            </View>
                             <View style={styles.pointsCell}>
-                                <Text style={styles.pointsText}>{item.points}</Text>
-                    </View>
-                </View>
+                                <Text style={styles.pointsText}>
+                                    {item.points}
+                                </Text>
+                            </View>
+                        </View>
                     );
                 })}
             </ScrollView>
@@ -576,7 +701,6 @@ const RelatedNews = () => {
     //         logo: "https://resources.premierleague.com/premierleague/badges/t1.png"
     //     }
     // ];
-
     // return (
     //     <View style={styles.relatedNews}>
     //         <Text style={styles.sectionTitle}>Related News</Text>
@@ -606,24 +730,27 @@ const LatestNews = () => {
     const fetchLatestNews = async () => {
         try {
             const result = await getNewsHighlight();
-            const sliced = result.slice(0, 3).map(article => ({
+            const sliced = result.slice(0, 3).map((article) => ({
                 id: article.id,
                 title: article.headline,
-                image: article.images?.[0]?.url || '',
-                description: article.description || '',
-                content: article.content || '',
-                url: article.links?.web?.href || '',
-                publishedDate: new Date(article.published).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                image: article.images?.[0]?.url || "",
+                description: article.description || "",
+                content: article.content || "",
+                url: article.links?.web?.href || "",
+                publishedDate: new Date(article.published).toLocaleDateString(
+                    "en-US",
+                    {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    }
+                ),
             }));
             setNewsItems(sliced);
         } catch (err) {
-            console.error('❌ Failed to fetch latest news:', err);
+            console.error("❌ Failed to fetch latest news:", err);
         }
     };
 
@@ -644,8 +771,8 @@ const LatestNews = () => {
                                 description: item.description,
                                 content: item.content,
                                 url: item.url,
-                                publishedDate: item.publishedDate
-                            }
+                                publishedDate: item.publishedDate,
+                            },
                         });
                     }}
                 >
@@ -656,7 +783,7 @@ const LatestNews = () => {
                     <Text style={styles.latestNewsTitle}>{item.title}</Text>
                 </TouchableOpacity>
             ))}
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.moreButton}
                 onPress={() => router.push("/News")}
             >
@@ -698,8 +825,8 @@ const LatestVideos = () => {
                             params: {
                                 url: video.url,
                                 title: video.title,
-                                thumbnail: video.thumbnail
-                            }
+                                thumbnail: video.thumbnail,
+                            },
                         });
                     }}
                 >
@@ -711,7 +838,7 @@ const LatestVideos = () => {
                 </TouchableOpacity>
             ))}
 
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.moreButton}
                 onPress={() => router.push("/Videos")}
             >
@@ -724,29 +851,29 @@ const LatestVideos = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: "#f2f2f2",
     },
     scrollView: {
         flex: 1,
     },
     headerContainer: {
-        paddingTop: Platform.OS === 'android' ? 20 : 0,
+        paddingTop: Platform.OS === "android" ? 20 : 0,
         paddingBottom: 15,
     },
     headerContent: {
         paddingHorizontal: 15,
     },
     headerTitle: {
-        color: 'white',
+        color: "white",
         fontSize: 32,
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontWeight: "bold",
+        textAlign: "center",
         marginBottom: 5,
     },
     headerDate: {
-        color: 'white',
+        color: "white",
         fontSize: 16,
-        textAlign: 'center',
+        textAlign: "center",
         marginBottom: 15,
         opacity: 0.9,
     },
@@ -754,22 +881,22 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     matchCard: {
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 10,
         padding: 12,
         marginBottom: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
         elevation: 2,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
     },
     matchTeamContainer: {
         flex: 2,
-        alignItems: 'center',
+        alignItems: "center",
     },
     matchTeamLogo: {
         width: 30,
@@ -777,56 +904,56 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     matchTeamName: {
-        color: '#333',
+        color: "#333",
         fontSize: 12,
-        fontWeight: '500',
-        textAlign: 'center',
-        width: '100%',
+        fontWeight: "500",
+        textAlign: "center",
+        width: "100%",
     },
     matchScoreContainer: {
         flex: 1.5,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
         paddingHorizontal: 8,
     },
     matchScore: {
-        color: '#333',
+        color: "#333",
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: "bold",
     },
     matchTime: {
-        color: '#333',
+        color: "#333",
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: "600",
     },
     matchStatus: {
-        color: '#666',
+        color: "#666",
         fontSize: 11,
         marginTop: 2,
     },
     loadingContainer: {
-        alignItems: 'center',
+        alignItems: "center",
         marginTop: 20,
     },
     loadingText: {
-        color: 'white',
+        color: "white",
         marginTop: 10,
     },
     noMatchesContainer: {
-        alignItems: 'center',
+        alignItems: "center",
         marginTop: 20,
     },
     noMatchesText: {
-        color: 'white',
+        color: "white",
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: "500",
     },
     newsHighlightContainer: {
-        backgroundColor: '#37003C',
+        backgroundColor: "#37003C",
         paddingVertical: 20,
     },
     newsHeader: {
-        alignItems: 'center',
+        alignItems: "center",
         marginBottom: 20,
     },
     newsLogo: {
@@ -837,83 +964,83 @@ const styles = StyleSheet.create({
         marginHorizontal: 15,
         marginBottom: 20,
         borderRadius: 15,
-        overflow: 'hidden',
-        backgroundColor: '#2C0031',
+        overflow: "hidden",
+        backgroundColor: "#2C0031",
         elevation: 5,
     },
     newsImageContainer: {
-        width: '100%',
+        width: "100%",
         height: 200,
         borderRadius: 15,
-        overflow: 'hidden',
+        overflow: "hidden",
     },
     newsImage: {
-        width: '100%',
-        height: '100%',
+        width: "100%",
+        height: "100%",
     },
     newsTag: {
-        position: 'absolute',
+        position: "absolute",
         top: 10,
         left: 10,
-        backgroundColor: '#00ff85',
+        backgroundColor: "#00ff85",
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 4,
     },
     newsTagText: {
-        color: '#37003C',
-        fontWeight: 'bold',
+        color: "#37003C",
+        fontWeight: "bold",
         fontSize: 12,
     },
     newsContent: {
         padding: 15,
     },
     newsTitle: {
-        color: '#ffffff',
+        color: "#ffffff",
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: "bold",
         marginBottom: 8,
     },
     newsDescription: {
-        color: '#ffffff99',
+        color: "#ffffff99",
         fontSize: 14,
         marginBottom: 8,
         lineHeight: 20,
     },
     newsDate: {
-        color: '#ffffff80',
+        color: "#ffffff80",
         fontSize: 12,
     },
     tabSelector: {
-        flexDirection: 'row',
-        backgroundColor: '#f2f2f2',
+        flexDirection: "row",
+        backgroundColor: "#f2f2f2",
         margin: 10,
         borderRadius: 10,
-        overflow: 'hidden',
+        overflow: "hidden",
     },
     tabButton: {
         flex: 1,
         padding: 15,
-        alignItems: 'center',
-        backgroundColor: '#e0e0e0',
+        alignItems: "center",
+        backgroundColor: "#e0e0e0",
     },
     activeTabButton: {
-        backgroundColor: '#00b2ff',
+        backgroundColor: "#00b2ff",
     },
     tabButtonText: {
-        fontWeight: 'bold',
-        color: '#333',
+        fontWeight: "bold",
+        color: "#333",
     },
     tabContent: {
         margin: 10,
         marginTop: 0,
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 10,
-        overflow: 'hidden',
+        overflow: "hidden",
     },
     matchTabContainer: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: "#f5f5f5",
         padding: 15,
     },
     matchDateGroup: {
@@ -921,27 +1048,27 @@ const styles = StyleSheet.create({
     },
     matchDateText: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
+        fontWeight: "bold",
+        color: "#333",
         marginBottom: 10,
     },
     matchCard: {
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 10,
         padding: 12,
         marginBottom: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
         elevation: 2,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
     },
     matchTeamContainer: {
         flex: 2,
-        alignItems: 'center',
+        alignItems: "center",
     },
     matchTeamLogo: {
         width: 30,
@@ -949,76 +1076,76 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     matchTeamName: {
-        color: '#333',
+        color: "#333",
         fontSize: 12,
-        fontWeight: '500',
-        textAlign: 'center',
-        width: '100%',
+        fontWeight: "500",
+        textAlign: "center",
+        width: "100%",
     },
     matchScoreContainer: {
         flex: 1.5,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
         paddingHorizontal: 8,
     },
     matchScore: {
-        color: '#333',
+        color: "#333",
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: "bold",
     },
     matchTime: {
-        color: '#333',
+        color: "#333",
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: "600",
     },
     matchStatus: {
-        color: '#666',
+        color: "#666",
         fontSize: 11,
         marginTop: 2,
     },
     leagueTableContainer: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: "#f5f5f5",
     },
     leagueTableHeader: {
-        flexDirection: 'row',
-        backgroundColor: 'white',
+        flexDirection: "row",
+        backgroundColor: "white",
         paddingVertical: 12,
         paddingHorizontal: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomColor: "#e0e0e0",
     },
     headerText: {
-        color: '#333',
+        color: "#333",
         fontSize: 12,
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontWeight: "bold",
+        textAlign: "center",
     },
     leagueTableRow: {
-        flexDirection: 'row',
-        backgroundColor: 'white',
+        flexDirection: "row",
+        backgroundColor: "white",
         paddingVertical: 12,
         paddingHorizontal: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: "#f0f0f0",
     },
     positionCell: {
         width: 40,
-        justifyContent: 'center',
+        justifyContent: "center",
     },
     teamCell: {
         flex: 3,
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         paddingRight: 10,
     },
     statsCell: {
         width: 40,
-        justifyContent: 'center',
+        justifyContent: "center",
     },
     pointsCell: {
         width: 45,
-        justifyContent: 'center',
+        justifyContent: "center",
     },
     teamLogo: {
         width: 25,
@@ -1026,52 +1153,52 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     positionText: {
-        color: '#333',
+        color: "#333",
         fontSize: 14,
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontWeight: "bold",
+        textAlign: "center",
     },
     teamText: {
-        color: '#333',
+        color: "#333",
         fontSize: 14,
         flex: 1,
     },
     statsText: {
-        color: '#333',
+        color: "#333",
         fontSize: 14,
-        textAlign: 'center',
+        textAlign: "center",
     },
     pointsText: {
-        color: '#333',
+        color: "#333",
         fontSize: 14,
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontWeight: "bold",
+        textAlign: "center",
     },
     championsLeague: {
         borderLeftWidth: 4,
-        borderLeftColor: '#00ff85',
+        borderLeftColor: "#00ff85",
     },
     europaLeague: {
         borderLeftWidth: 4,
-        borderLeftColor: '#FF7F00',
+        borderLeftColor: "#FF7F00",
     },
     relegation: {
         borderLeftWidth: 4,
-        borderLeftColor: '#FF4444',
+        borderLeftColor: "#FF4444",
     },
     latestNews: {
         margin: 10,
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 10,
         padding: 15,
     },
     latestNewsItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         marginBottom: 15,
         paddingBottom: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
+        borderBottomColor: "#f2f2f2",
     },
     latestNewsImage: {
         width: 80,
@@ -1085,18 +1212,18 @@ const styles = StyleSheet.create({
     },
     latestVideos: {
         margin: 10,
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 10,
         padding: 15,
         marginBottom: 80, // Extra space for bottom navigation
     },
     latestVideoItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         marginBottom: 15,
         paddingBottom: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
+        borderBottomColor: "#f2f2f2",
     },
     latestVideoImage: {
         width: 80,
@@ -1110,20 +1237,20 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: "bold",
         marginBottom: 15,
     },
     moreButton: {
-        alignItems: 'center',
+        alignItems: "center",
         marginTop: 5,
     },
     moreButtonText: {
-        color: '#00b2ff',
-        fontWeight: 'bold',
+        color: "#00b2ff",
+        fontWeight: "bold",
     },
     liveMatchStatus: {
-        color: '#ff0000',
-        fontWeight: 'bold'
+        color: "#ff0000",
+        fontWeight: "bold",
     },
 });
 

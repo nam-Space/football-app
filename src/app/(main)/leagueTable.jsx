@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getCompetitionStandingDetailAPI } from "@/utils/api";
+import { router } from "expo-router";
 
 // Available competitions
 const COMPETITIONS = [
@@ -253,48 +254,66 @@ const LeagueTable = ({ navigation }) => {
         </View>
     );
 
-    const renderTableRow = (team, index) => (
-        <TouchableOpacity
-            key={team.team.id}
-            style={styles.tableRow}
-            onPress={() =>
-                setExpandedRow(
-                    expandedRow === team.team.id ? null : team.team.id
-                )
-            }
-        >
-            <Text style={[styles.cell, styles.positionColumn]}>
-                {team.position}
-            </Text>
-            <View style={[styles.cell, styles.clubColumn, styles.clubCell]}>
-                <Image
-                    source={{ uri: team.team.crest }}
-                    style={styles.teamLogo}
-                    resizeMode="contain"
+    const renderTableRow = (team, index) => {
+        return (
+            <TouchableOpacity
+                key={team.team.id}
+                style={styles.tableRow}
+                onPress={() => {
+                    setExpandedRow(
+                        expandedRow === team.team.id ? null : team.team.id
+                    );
+                    router.push({
+                        pathname: "/Club",
+                        params: {
+                            teamName1: team.team.shortName,
+                        },
+                    });
+                }}
+            >
+                <Text style={[styles.cell, styles.positionColumn]}>
+                    {team.position}
+                </Text>
+                <View style={[styles.cell, styles.clubColumn, styles.clubCell]}>
+                    <Image
+                        source={{ uri: team.team.crest }}
+                        style={styles.teamLogo}
+                        resizeMode="contain"
+                    />
+                    <Text style={styles.clubAbbr}>{team.team.tla}</Text>
+                </View>
+                <Text style={[styles.cell, styles.statsColumn]}>
+                    {team.playedGames}
+                </Text>
+                <Text style={[styles.cell, styles.statsColumn]}>
+                    {team.won}
+                </Text>
+                <Text style={[styles.cell, styles.statsColumn]}>
+                    {team.draw}
+                </Text>
+                <Text style={[styles.cell, styles.statsColumn]}>
+                    {team.lost}
+                </Text>
+                <Text style={[styles.cell, styles.statsColumn]}>
+                    {team.goalDifference > 0
+                        ? `+${team.goalDifference}`
+                        : team.goalDifference}
+                </Text>
+                <Text style={[styles.cell, styles.ptsColumn]}>
+                    {team.points}
+                </Text>
+                <Ionicons
+                    name={
+                        expandedRow === team.team.id
+                            ? "chevron-up"
+                            : "chevron-down"
+                    }
+                    size={20}
+                    color="#37003C"
                 />
-                <Text style={styles.clubAbbr}>{team.team.tla}</Text>
-            </View>
-            <Text style={[styles.cell, styles.statsColumn]}>
-                {team.playedGames}
-            </Text>
-            <Text style={[styles.cell, styles.statsColumn]}>{team.won}</Text>
-            <Text style={[styles.cell, styles.statsColumn]}>{team.draw}</Text>
-            <Text style={[styles.cell, styles.statsColumn]}>{team.lost}</Text>
-            <Text style={[styles.cell, styles.statsColumn]}>
-                {team.goalDifference > 0
-                    ? `+${team.goalDifference}`
-                    : team.goalDifference}
-            </Text>
-            <Text style={[styles.cell, styles.ptsColumn]}>{team.points}</Text>
-            <Ionicons
-                name={
-                    expandedRow === team.team.id ? "chevron-up" : "chevron-down"
-                }
-                size={20}
-                color="#37003C"
-            />
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     const renderFilterModal = (
         visible,
