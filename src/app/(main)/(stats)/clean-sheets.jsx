@@ -1,5 +1,5 @@
-"use client"
-import { useState, useEffect } from "react"
+"use client";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,92 +11,92 @@ import {
   TouchableOpacity,
   Pressable,
   StatusBar,
-} from "react-native"
-import { getCompetitionMatchesAPI, getCompetitionTeamsAPI } from "../../../utils/api"
-import { useLocalSearchParams, useRouter } from "expo-router"
-import { Ionicons } from "@expo/vector-icons"
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { getCompetitionTeamsAPI, getCompetitionMatchesAPI } from "../../../utils/api";
 
-export default function ClubsScreen() {
-  const { season } = useLocalSearchParams() || {}
-  const router = useRouter()
-  const currentSeason = season || "2024"
-
-  const [teamsWithCleanSheets, setTeamsWithCleanSheets] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+export default function CleanSheetsScreen() {
+  const { season, competitionId } = useLocalSearchParams();
+  const router = useRouter();
+  const currentSeason = season || "2024";
+  const [teamsWithCleanSheets, setTeamsWithCleanSheets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Fetch teams
-      const teamsResponse = await getCompetitionTeamsAPI({ competitionId: "PL", season: currentSeason, limit: 100  })
-      if (!teamsResponse?.teams) throw new Error("Failed to fetch teams")
-      const teams = teamsResponse.teams
+      const teamsResponse = await getCompetitionTeamsAPI({
+        competitionId,
+        season: currentSeason,
+        limit: 100,
+      });
+      if (!teamsResponse?.teams) throw new Error("Failed to fetch teams");
+      const teams = teamsResponse.teams;
 
-      // Fetch matches
-      const matchesResponse = await getCompetitionMatchesAPI({ competitionId: "PL", season: currentSeason, limit: 100  })
+      // Fetch matches (with pagination if needed)
+      let page = 1;
+      const limit = 100;
+
+      const matchesResponse = await getCompetitionMatchesAPI({
+        competitionId,
+        season: currentSeason,
+        status: "FINISHED",
+        limit,
+        page,
+      });
       if (!matchesResponse?.matches) throw new Error("Failed to fetch matches")
-      const matches = matchesResponse.matches
+      const matches = matchesResponse.matches 
 
       // Calculate clean sheets for each team
-      const cleanSheetsCount = {}
-      teams.forEach(team => {
-        cleanSheetsCount[team.id] = { team, cleanSheets: 0 }
-      })
+      const cleanSheetsCount = {};
+      teams.forEach((team) => {
+        cleanSheetsCount[team.id] = { team, cleanSheets: 0 };
+      });
 
-      matches.forEach(match => {
-        const homeTeamId = match.homeTeam.id
-        const awayTeamId = match.awayTeam.id
-        const homeGoals = match.score.fullTime.home
-        const awayGoals = match.score.fullTime.away
+      matches.forEach((match) => {
+        const homeTeamId = match.homeTeam?.id;
+        const awayTeamId = match.awayTeam?.id;
+        const homeGoals = match.score?.fullTime?.home;
+        const awayGoals = match.score?.fullTime?.away;
 
         // Check for clean sheets
         if (awayGoals === 0 && cleanSheetsCount[homeTeamId]) {
-          cleanSheetsCount[homeTeamId].cleanSheets += 1
+          cleanSheetsCount[homeTeamId].cleanSheets += 1;
         }
         if (homeGoals === 0 && cleanSheetsCount[awayTeamId]) {
-          cleanSheetsCount[awayTeamId].cleanSheets += 1
+          cleanSheetsCount[awayTeamId].cleanSheets += 1;
         }
-      })
+      });
 
       // Convert to array and sort by clean sheets
       const sortedTeams = Object.values(cleanSheetsCount)
-        .filter(item => item.cleanSheets > 0)
-        .sort((a, b) => b.cleanSheets - a.cleanSheets)
+        .filter((item) => item.cleanSheets > 0)
+        .sort((a, b) => b.cleanSheets - a.cleanSheets);
 
-      setTeamsWithCleanSheets(sortedTeams)
+      setTeamsWithCleanSheets(sortedTeams);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchData()
-  }, [season])
+    fetchData();
+  }, [season, competitionId]);
 
   const navigateToTeamDetail = (teamId) => {
-    const teamIdString = teamId ? teamId.toString() : null
-    const seasonString = currentSeason ? currentSeason.toString() : null
+    router.push({
+      pathname: "(main)/teams",
+      params: { teamId, season: currentSeason },
+    });
+  };
 
-    if (!teamIdString) {
-      console.error("Invalid teamId:", teamId)
-      return
-    }
-    if (!seasonString) {
-      console.error("Invalid season:", currentSeason)
-      return
-    }
-
-    router.push({ 
-      pathname: '(main)/team',
-      params: { season: seasonString, teamId: teamIdString },
-    })
-  }
-
-  if (loading)
+  if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#37003C" />
@@ -105,9 +105,10 @@ export default function ClubsScreen() {
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
-    )
+    );
+  }
 
-  if (error)
+  if (error) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#37003C" />
@@ -115,30 +116,28 @@ export default function ClubsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerBarTitle}>Clubs</Text>
+          <Text style={styles.headerBarTitle}>Clean Sheets</Text>
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Error: {error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={() => fetchData()}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchData()}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    )
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#37003C" />
-      
+
       {/* Header */}
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerBarTitle}>Clubs</Text>
+        <Text style={styles.headerBarTitle}>Clean Sheets</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
@@ -160,54 +159,46 @@ export default function ClubsScreen() {
 
         {/* Top Team Card */}
         {teamsWithCleanSheets.length > 0 && (
-          <TouchableOpacity 
-            style={styles.topTeam} 
+          <TouchableOpacity
+            style={styles.topScorer}
             onPress={() => navigateToTeamDetail(teamsWithCleanSheets[0].team.id)}
             activeOpacity={0.9}
           >
-            <View style={styles.topTeamContent}>
-              <View style={styles.topTeamInfo}>
-                <Text style={styles.topTeamRank}>1</Text>
-                <Text style={styles.topTeamName}>{teamsWithCleanSheets[0].team.name}</Text>
-                <Text style={styles.topTeamCleanSheets}>{teamsWithCleanSheets[0].cleanSheets}</Text>
+            <View style={styles.topScorerGradient}>
+              <View style={styles.topScorerContent}>
+                <View style={styles.topScorerInfo}>
+                  <Text style={styles.topScorerRank}>1</Text>
+                  <Text style={styles.topScorerName}>{teamsWithCleanSheets[0].team.name}</Text>
+                  <Text style={styles.topScorerGoals}>{teamsWithCleanSheets[0].cleanSheets}</Text>
+                </View>
+                <Image
+                  source={{ uri: teamsWithCleanSheets[0].team.crest }}
+                  style={styles.topScorerImage}
+                  resizeMode="contain"
+                />
               </View>
-              <Image 
-                source={{ uri: teamsWithCleanSheets[0].team.crest }} 
-                style={styles.topTeamLogo} 
-                resizeMode="contain"
-              />
             </View>
           </TouchableOpacity>
         )}
 
         {/* List of other teams */}
-        <View style={styles.teamsList}>
+        <View style={styles.scorersList}>
           <View style={styles.listHeader}>
             <Text style={[styles.headerText, styles.posColumn]}>Pos</Text>
-            <Text style={[styles.headerText, styles.clubColumn]}>Club</Text>
-            <Text style={[styles.headerText, styles.valueColumn]}>Value</Text>
+            <Text style={[styles.headerText, styles.playerColumn]}>Team</Text>
+            <Text style={[styles.headerText, styles.valueColumn]}>Clean Sheets</Text>
           </View>
 
           {teamsWithCleanSheets.slice(1).map((teamData, index) => (
             <Pressable
               key={teamData.team.id}
-              style={({ pressed }) => [
-                styles.teamRow,
-                pressed && styles.teamRowPressed
-              ]}
+              style={({ pressed }) => [styles.scorerRow, pressed && styles.scorerRowPressed]}
               onPress={() => navigateToTeamDetail(teamData.team.id)}
             >
               <Text style={[styles.posValue, styles.posColumn]}>{index + 2}</Text>
-              <View style={[styles.clubColumn, styles.clubContainer]}>
-                <Image 
-                  source={{ uri: teamData.team.crest }} 
-                  style={styles.clubLogo} 
-                />
-                <Text 
-                  style={styles.clubName}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
+              <View style={[styles.clubContainer, styles.playerColumn]}>
+                <Image source={{ uri: teamData.team.crest }} style={styles.clubLogo} />
+                <Text style={styles.playerName} numberOfLines={1} ellipsizeMode="tail">
                   {teamData.team.name}
                 </Text>
               </View>
@@ -215,18 +206,18 @@ export default function ClubsScreen() {
             </Pressable>
           ))}
         </View>
-        
+
         {/* Extra padding at bottom */}
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#37003C",
+    backgroundColor: "white",
   },
   scrollView: {
     backgroundColor: "white",
@@ -235,10 +226,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#37003C",
   },
   loadingText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 18,
     marginTop: 10,
   },
   errorContainer: {
@@ -249,7 +241,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 18,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -278,20 +270,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "white",
+    fontFamily: "System",
   },
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 16,
+    backgroundColor: "white",
   },
   headerTitle: {
     fontSize: 32,
     fontWeight: "bold",
     color: "#37003C",
+    fontFamily: "System",
   },
   season: {
     fontSize: 24,
     color: "#37003C",
+    fontFamily: "System",
   },
   oracleContainer: {
     marginHorizontal: 16,
@@ -306,58 +302,59 @@ const styles = StyleSheet.create({
   poweredByText: {
     fontSize: 14,
     color: "#666",
-    fontStyle: "italic"
+    fontStyle: "italic",
   },
   oracleLogo: {
     width: 180,
     height: 60,
   },
-  topTeam: {
-    backgroundColor: "#DB0007",
+  topScorer: {
     margin: 16,
     borderRadius: 12,
     overflow: "hidden",
   },
-  topTeamContent: {
+  topScorerGradient: {
+    backgroundColor: "#DB0007",
+    overflow: "hidden",
+  },
+  topScorerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 8,
   },
-  topTeamInfo: {
+  topScorerInfo: {
     flex: 1,
   },
-  topTeamRank: {
+  topScorerRank: {
     fontSize: 18,
     fontWeight: "bold",
     color: "white",
     marginBottom: 4,
   },
-  topTeamName: {
+  topScorerName: {
     fontSize: 18,
     fontWeight: "bold",
     color: "white",
     marginBottom: 4,
   },
-  topTeamCleanSheets: {
+  topScorerGoals: {
     fontSize: 32,
     fontWeight: "bold",
     color: "white",
     textAlign: "left",
   },
-  topTeamLogo: {
+  topScorerImage: {
     width: 100,
     height: 100,
     marginLeft: 16,
   },
-  teamsList: {
+  scorersList: {
     marginHorizontal: 16,
     backgroundColor: "white",
     borderRadius: 8,
     overflow: "hidden",
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
   },
   listHeader: {
     flexDirection: "row",
@@ -367,39 +364,42 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e0e0e0",
   },
   headerText: {
+    textAlign: "center",
     fontSize: 14,
     fontWeight: "bold",
-    color: "#8a5a8e", // Lighter purple color for headers
+    color: "#8a5a8e",
     textTransform: "uppercase",
-    textAlign:"center",
   },
-  teamRow: {
+  scorerRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
-  teamRowPressed: {
+  scorerRowPressed: {
     backgroundColor: "#f5f5f5",
   },
   posColumn: {
     width: 40,
   },
-  clubColumn: {
+  playerColumn: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
   },
   valueColumn: {
     width: 60,
     textAlign: "right",
   },
   posValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#37003C",
+  },
+  playerName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000000",
   },
   clubContainer: {
     flexDirection: "row",
@@ -408,17 +408,12 @@ const styles = StyleSheet.create({
   clubLogo: {
     width: 28,
     height: 28,
-    marginRight: 12,
-  },
-  clubName: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#37003C",
+    marginRight: 8,
   },
   scoreValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#37003C",
     textAlign: "right",
   },
-})
+});
