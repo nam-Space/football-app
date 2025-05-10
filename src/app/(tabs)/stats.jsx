@@ -27,24 +27,16 @@ const colors = {
   gray: "#e0e0e0",
   lightGray: "#f5f5f5",
 };
-
-const StatCard = ({ title, value, image, teamLogo, playerId, teamId, season }) => {
-  const router = useRouter();
+const router = useRouter();
+const StatCard = ({ title, value, image, teamLogo, competitionId, season, statType }) => {
   return (
     <TouchableOpacity
       style={styles.statCard}
       onPress={() => {
-        if (playerId) {
-          router.push({
-            pathname: "(main)/player",
-            params: { season },
-          });
-        } else if (teamId) {
-          router.push({
-            pathname: "(main)/teams",
-            params: { season },
-          });
-        }
+        router.push({
+          pathname: `(main)/(stats)/${statType}`,
+          params: { season, competitionId },
+        });
       }}
     >
       {image ? (
@@ -178,29 +170,33 @@ export default function StatsScreen() {
                 title: "Goals",
                 value: topScorerGoals,
                 image: playerImage,
-                playerId: topScorerId,
                 season: seasonYear,
+                competitionId,
+                statType: "goals"
               },
               playerAssists: {
                 title: "Assists",
                 value: topScorerAssists,
                 image: playerImage,
-                playerId: topScorerId,
                 season: seasonYear,
+                competitionId,
+                statType: "assists"
               },
               teamGoals: {
                 title: "Goals",
                 value: teamGoals,
                 teamLogo: topTeam.team.crest,
-                teamId: teamId,
                 season: seasonYear,
+                competitionId,
+                statType: "team-goals"
               },
               cleanSheets: {
                 title: "Clean Sheets",
                 value: cleanSheets,
                 teamLogo: topTeam.team.crest,
-                teamId: teamId,
                 season: seasonYear,
+                competitionId,
+                statType: "clean-sheets"
               },
             },
           });
