@@ -99,7 +99,9 @@ const ClubMatchesScreen = () => {
             return null;
 
         const table = standings.standings[0].table;
-        const manUtdEntry = table.find((entry) => entry.team.id === 66); // Man Utd ID is 66
+        const manUtdEntry = table.find(
+            (entry) => entry.team.id == (user?.team?.id || 66)
+        ); // Man Utd ID is 66
 
         return manUtdEntry
             ? {
@@ -116,15 +118,28 @@ const ClubMatchesScreen = () => {
             : null;
     };
 
+    const convertDateFormat = (dateStr) => {
+        const date = new Date(dateStr);
+        date.setHours(date.getHours() + 7); // +7 giờ cho Việt Nam
+        return date.toISOString().split("T")[0];
+    };
+
     const renderMatch = ({ item }) => {
-        const isManUtdHome = item.homeTeam.id === 66;
-        const opponent = isManUtdHome ? item.awayTeam : item.homeTeam;
         const isFinished = item.status === "FINISHED";
 
         return (
             <TouchableOpacity
                 style={styles.matchCard}
-                // onPress={() => navigation.navigate('MatchDetails', { match: item })}
+                onPress={() =>
+                    router.push({
+                        pathname: "/(main)/matchDetail",
+                        params: {
+                            homeTeamId: item.homeTeam.id,
+                            awayTeamId: item.awayTeam.id,
+                            matchDate: convertDateFormat(item.utcDate),
+                        },
+                    })
+                }
             >
                 <Text style={styles.matchDate}>{formatDate(item.utcDate)}</Text>
                 <View style={styles.matchContent}>
@@ -648,7 +663,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         color: "#37003C",
-        width: 50,
+        width: 80,
         textAlign: "center",
     },
     fixtureTeamLogo: {

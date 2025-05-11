@@ -302,64 +302,67 @@ const Match = () => {
 
             {/* Matches List */}
             <ScrollView style={styles.matchesList}>
-                {Object.entries(matches).map(([date, dayMatches]) => (
-                    <View key={date} style={styles.dateGroup}>
-                        <Text style={styles.dateHeader}>{date}</Text>
-                        {dayMatches.map((match) => (
-                            <TouchableOpacity
-                                key={match.id}
-                                style={styles.matchCard}
-                                onPress={() =>
-                                    router.push({
-                                        pathname: "/(main)/matchDetail",
-                                        params: {
-                                            homeTeamId: match.homeTeam.id,
-                                            awayTeamId: match.awayTeam.id,
-                                            matchDate: convertDateFormat(date),
-                                        },
-                                    })
-                                }
-                            >
-                                <View style={styles.matchInfo}>
-                                    <View style={styles.team}>
-                                        <Text style={styles.teamName}>
-                                            {match.homeTeam.shortName}
-                                        </Text>
-                                        <Image
-                                            source={{
-                                                uri: match.homeTeam.crest,
-                                            }}
-                                            style={styles.teamLogo}
-                                        />
-                                    </View>
+                {Object.entries(matches).map(([date, dayMatches]) => {
+                    return (
+                        <View key={date} style={styles.dateGroup}>
+                            <Text style={styles.dateHeader}>{date}</Text>
+                            {dayMatches.map((match) => (
+                                <TouchableOpacity
+                                    key={match.id}
+                                    style={styles.matchCard}
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "/(main)/matchDetail",
+                                            params: {
+                                                homeTeamId: match.homeTeam.id,
+                                                awayTeamId: match.awayTeam.id,
+                                                matchDate:
+                                                    convertDateFormat(date),
+                                            },
+                                        })
+                                    }
+                                >
+                                    <View style={styles.matchInfo}>
+                                        <View style={styles.team}>
+                                            <Text style={styles.teamName}>
+                                                {match.homeTeam.shortName}
+                                            </Text>
+                                            <Image
+                                                source={{
+                                                    uri: match.homeTeam.crest,
+                                                }}
+                                                style={styles.teamLogo}
+                                            />
+                                        </View>
 
-                                    <View style={styles.matchTime}>
-                                        <Text style={styles.timeText}>
-                                            {getScoreDisplay(match)}
-                                        </Text>
-                                    </View>
+                                        <View style={styles.matchTime}>
+                                            <Text style={styles.timeText}>
+                                                {getScoreDisplay(match)}
+                                            </Text>
+                                        </View>
 
-                                    <View style={styles.team}>
-                                        <Image
-                                            source={{
-                                                uri: match.awayTeam.crest,
-                                            }}
-                                            style={styles.teamLogo}
-                                        />
-                                        <Text style={styles.teamName}>
-                                            {match.awayTeam.shortName}
-                                        </Text>
+                                        <View style={styles.team}>
+                                            <Image
+                                                source={{
+                                                    uri: match.awayTeam.crest,
+                                                }}
+                                                style={styles.teamLogo}
+                                            />
+                                            <Text style={styles.teamName}>
+                                                {match.awayTeam.shortName}
+                                            </Text>
+                                        </View>
                                     </View>
-                                </View>
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={24}
-                                    color="#3b0053"
-                                />
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                ))}
+                                    <Ionicons
+                                        name="chevron-forward"
+                                        size={24}
+                                        color="#3b0053"
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    );
+                })}
             </ScrollView>
         </View>
     );
