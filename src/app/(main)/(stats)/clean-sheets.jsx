@@ -116,7 +116,7 @@ export default function CleanSheetsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerBarTitle}>Clean Sheets</Text>
+          <Text style={styles.headerBarTitle}>Clubs</Text>
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Error: {error}</Text>
@@ -137,7 +137,7 @@ export default function CleanSheetsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerBarTitle}>Clean Sheets</Text>
+        <Text style={styles.headerBarTitle}>Clubs</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
