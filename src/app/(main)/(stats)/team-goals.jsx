@@ -44,10 +44,10 @@ export default function TeamGoalsScreen() {
     fetchData();
   }, [season, competitionId]);
 
-  const navigateToTeamDetail = (teamId) => {
+  const navigateToTeamDetail = (teamName1) => {
     router.push({
-      pathname: "(main)/teams",
-      params: { teamId, season: currentSeason },
+      pathname: "(main)/Club",
+      params: { teamName1, season: currentSeason },
     });
   };
 
@@ -116,7 +116,7 @@ export default function TeamGoalsScreen() {
         {teams.length > 0 && (
           <TouchableOpacity
             style={styles.topScorer}
-            onPress={() => navigateToTeamDetail(teams[0].team.id)}
+            onPress={() => navigateToTeamDetail(teams[0].team.name)}
             activeOpacity={0.9}
           >
             <View style={styles.topScorerGradient}>
@@ -144,7 +144,7 @@ export default function TeamGoalsScreen() {
             <Pressable
               key={team.team.id}
               style={({ pressed }) => [styles.scorerRow, pressed && styles.scorerRowPressed]}
-              onPress={() => navigateToTeamDetail(team.team.id)}
+              onPress={() => navigateToTeamDetail(team.team.name)}
             >
               <Text style={[styles.posValue, styles.posColumn]}>{index + 2}</Text>
               <View style={[styles.clubContainer, styles.playerColumn]}>

@@ -27,8 +27,7 @@ const colors = {
   gray: "#e0e0e0",
   lightGray: "#f5f5f5",
 };
-const router = useRouter();
-const StatCard = ({ title, value, image, teamLogo, competitionId, season, statType }) => {
+const StatCard = ({ title, value, image, teamLogo, competitionId, season, statType, router }) => {
   return (
     <TouchableOpacity
       style={styles.statCard}
@@ -70,6 +69,7 @@ const MenuLink = ({ title, onPress }) => {
 };
 
 export default function StatsScreen() {
+  const router = useRouter();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -254,10 +254,10 @@ export default function StatsScreen() {
         <View style={styles.topStatsSection}>
           <Text style={styles.sectionTitle}>{stats.season} Top Stats</Text>
           <View style={styles.statsGrid}>
-            <StatCard {...stats.topStats.playerGoals} />
-            <StatCard {...stats.topStats.playerAssists} />
-            <StatCard {...stats.topStats.teamGoals} />
-            <StatCard {...stats.topStats.cleanSheets} />
+            <StatCard {...stats.topStats.playerGoals} router={router}/>
+            <StatCard {...stats.topStats.playerAssists} router={router}/>
+            <StatCard {...stats.topStats.teamGoals} router={router}/>
+            <StatCard {...stats.topStats.cleanSheets} router={router}/>
           </View>
         </View>
 
